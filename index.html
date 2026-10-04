@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transfer Savaşı – Futbolcu Açık Artırma Ligi (Copy)</title>
+<style>
+:root{
+  --bg:#f3f6f4;--card:#ffffff;--text:#14201a;--muted:#5d6b63;--line:#dfe6e1;
+  --accent:#16a34a;--accent-ink:#ffffff;--accent-soft:#dcfce7;--warn:#d97706;--danger:#dc2626;--gold:#eab308;
+  --c0:#2563eb;--c1:#dc2626;--c2:#9333ea;--c3:#ea580c;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0e1511;--card:#17211b;--text:#e8f0ea;--muted:#9aa9a0;--line:#26332b;--accent:#22c55e;--accent-ink:#04210f;--accent-soft:#12301d;}
+}
+:root[data-theme="dark"]{--bg:#0e1511;--card:#17211b;--text:#e8f0ea;--muted:#9aa9a0;--line:#26332b;--accent:#22c55e;--accent-ink:#04210f;--accent-soft:#12301d;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45;min-height:100%}
+#app{max-width:900px;margin:0 auto;padding:16px}
+h1{font-size:1.6rem;margin:4px 0 2px}
+h2{font-size:1.15rem;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+label{display:block;font-weight:600;margin:12px 0 6px}
+input[type=text],input[type=number]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:1rem}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--text);padding:10px 16px;border-radius:10px;font-weight:600}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.danger{color:var(--danger)}
+.seg button{flex:1}
+.seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.big{font-size:2rem;font-weight:800}
+.muted{color:var(--muted)}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:var(--accent-soft);color:var(--text)}
+.pos-GK{background:#fde68a;color:#422006}.pos-DEF{background:#bfdbfe;color:#0c1f4a}.pos-MID{background:#bbf7d0;color:#052e16}.pos-FWD{background:#fecaca;color:#450a0a}
+.lot{text-align:center;padding:22px 12px}
+.lot .name{font-size:1.8rem;font-weight:800;margin:6px 0}
+.ovr{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:1.7rem;font-weight:800}
+.bid{font-size:2.4rem;font-weight:900;color:var(--accent)}
+.mgr{border-left:5px solid var(--line)}
+.mgr.turn{outline:2px solid var(--accent)}
+.mgr small{display:block;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.chips span{font-size:.78rem;padding:2px 7px;border-radius:99px;border:1px solid var(--line)}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:3px 0 8px}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{padding:7px 8px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+th:nth-child(2),td:nth-child(2){text-align:left}
+tr.first td{font-weight:800;background:var(--accent-soft)}
+.match{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.match b{min-width:54px;text-align:center}
+.live{min-height:0}
+.live .score{font-size:1.8rem;font-weight:900;text-align:center}
+.ev{padding:3px 0}
+.champ{text-align:center;padding:26px 12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));border-color:var(--accent)}
+.champ .big{font-size:2.3rem}
+.note{font-size:.9rem;color:var(--muted)}
+.banner{padding:10px 12px;border-radius:10px;background:var(--accent-soft);margin-bottom:12px;font-weight:600}
+.banner.no{background:#fee2e2;color:#450a0a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .banner.no{background:#3b1414;color:#fecaca}}
+.hud{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:800}
+.hud .sc{font-size:1.9rem}
+canvas#pitch{width:100%;display:block;border-radius:10px;background:#2e7d32;margin:6px 0}
+#evlog{min-height:1.4em}
+.spd button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-size:.72rem;font-weight:800}
+.lineup{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;font-size:.88rem}
+.lineup div.l{display:flex;align-items:center;gap:6px;padding:2px 0}
+details summary{cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ==LOGIC==
+const RAW=`Thibaut Courtois|GK|BEL|89
+Alisson Becker|GK|BRA|88
+Gianluigi Donnarumma|GK|ITA|88
+Mike Maignan|GK|FRA|87
+Jan Oblak|GK|SVN|87
+Marc-André ter Stegen|GK|GER|86
+Emiliano Martínez|GK|ARG|86
+Gregor Kobel|GK|SUI|85
+Yassine Bounou|GK|MAR|83
+Uğurcan Çakır|GK|TUR|80
+Virgil van Dijk|DEF|NED|88
+Rúben Dias|DEF|POR|87
+William Saliba|DEF|FRA|87
+Achraf Hakimi|DEF|MAR|87
+Trent Alexander-Arnold|DEF|ENG|86
+Alessandro Bastoni|DEF|ITA|86
+Marquinhos|DEF|BRA|86
+Gabriel Magalhães|DEF|BRA|86
+Josko Gvardiol|DEF|CRO|85
+Antonio Rüdiger|DEF|GER|85
+Nuno Mendes|DEF|POR|85
+Jules Koundé|DEF|FRA|85
+Federico Dimarco|DEF|ITA|85
+Theo Hernández|DEF|FRA|84
+Dani Carvajal|DEF|ESP|84
+Ronald Araújo|DEF|URU|84
+Pau Cubarsí|DEF|ESP|83
+Kim Min-jae|DEF|KOR|83
+Alphonso Davies|DEF|CAN|82
+Andrew Robertson|DEF|SCO|82
+Ferdi Kadıoğlu|DEF|TUR|80
+Merih Demiral|DEF|TUR|79
+Çağlar Söyüncü|DEF|TUR|77
+Rodri|MID|ESP|91
+Jude Bellingham|MID|ENG|90
+Kevin De Bruyne|MID|BEL|89
+Pedri|MID|ESP|88
+Martin Ødegaard|MID|NOR|88
+Jamal Musiala|MID|GER|88
+Florian Wirtz|MID|GER|88
+Federico Valverde|MID|URU|87
+Bernardo Silva|MID|POR|87
+Bruno Fernandes|MID|POR|87
+Declan Rice|MID|ENG|87
+Phil Foden|MID|ENG|87
+Vitinha|MID|POR|86
+Nicolò Barella|MID|ITA|86
+Cole Palmer|MID|ENG|86
+Joshua Kimmich|MID|GER|86
+Hakan Çalhanoğlu|MID|TUR|85
+Frenkie de Jong|MID|NED|85
+Alexis Mac Allister|MID|ARG|85
+Luka Modrić|MID|CRO|83
+Enzo Fernández|MID|ARG|83
+Gavi|MID|ESP|83
+Arda Güler|MID|TUR|82
+Orkun Kökçü|MID|TUR|79
+Kylian Mbappé|FWD|FRA|92
+Erling Haaland|FWD|NOR|92
+Lamine Yamal|FWD|ESP|90
+Vinícius Júnior|FWD|BRA|90
+Harry Kane|FWD|ENG|90
+Mohamed Salah|FWD|EGY|89
+Ousmane Dembélé|FWD|FRA|89
+Raphinha|FWD|BRA|88
+Bukayo Saka|FWD|ENG|88
+Lautaro Martínez|FWD|ARG|87
+Victor Osimhen|FWD|NGA|87
+Robert Lewandowski|FWD|POL|86
+Rafael Leão|FWD|POR|86
+Khvicha Kvaratskhelia|FWD|GEO|86
+Viktor Gyökeres|FWD|SWE|86
+Alexander Isak|FWD|SWE|86
+Lionel Messi|FWD|ARG|86
+Antoine Griezmann|FWD|FRA|85
+Julián Álvarez|FWD|ARG|85
+Michael Olise|FWD|FRA|85
+Heung-min Son|FWD|KOR|84
+Serhou Guirassy|FWD|GUI|83
+Cristiano Ronaldo|FWD|POR|82
+Marcus Rashford|FWD|ENG|82
+Darwin Núñez|FWD|URU|81
+Kenan Yıldız|FWD|TUR|80
+Mauro Icardi|FWD|ARG|80
+Barış Alper Yılmaz|FWD|TUR|78
+Diogo Costa|GK|POR|85
+David Raya|GK|ESP|85
+Giorgi Mamardashvili|GK|GEO|84
+Ederson|GK|BRA|83
+Jordan Pickford|GK|ENG|82
+Unai Simón|GK|ESP|82
+Mile Svilar|GK|SRB|82
+Yann Sommer|GK|SUI|81
+Lucas Chevalier|GK|FRA|80
+Joan García|GK|ESP|80
+Guglielmo Vicario|GK|ITA|80
+Marco Carnesecchi|GK|ITA|80
+Anatoliy Trubin|GK|UKR|80
+Michele Di Gregorio|GK|ITA|79
+Oliver Baumann|GK|GER|79
+Lukáš Hrádecký|GK|FIN|79
+Bento|GK|BRA|79
+Bart Verbruggen|GK|NED|78
+Alexander Nübel|GK|GER|78
+Wojciech Szczęsny|GK|POL|78
+Rui Silva|GK|POR|78
+Dean Henderson|GK|ENG|79
+Robert Sánchez|GK|ESP|77
+Dominik Livaković|GK|CRO|77
+Mert Günok|GK|TUR|76
+Altay Bayındır|GK|TUR|76
+Ersin Destanoğlu|GK|TUR|76
+Günay Güvenç|GK|TUR|74
+Doğan Alemdar|GK|TUR|74
+Tarık Çetin|GK|TUR|72
+Ibrahima Konaté|DEF|FRA|84
+Jurriën Timber|DEF|NED|83
+Riccardo Calafiori|DEF|ITA|82
+Ben White|DEF|ENG|80
+Myles Lewis-Skelly|DEF|ENG|78
+Jeremie Frimpong|DEF|NED|80
+Milos Kerkez|DEF|HUN|80
+John Stones|DEF|ENG|83
+Manuel Akanji|DEF|SUI|83
+Nathan Aké|DEF|NED|82
+Rico Lewis|DEF|ENG|77
+Nico O'Reilly|DEF|ENG|79
+Abdukodir Khusanov|DEF|UZB|78
+Rayan Aït-Nouri|DEF|ALG|80
+Reece James|DEF|ENG|83
+Levi Colwill|DEF|ENG|82
+Marc Cucurella|DEF|ESP|82
+Wesley Fofana|DEF|FRA|79
+Trevoh Chalobah|DEF|ENG|78
+Malo Gusto|DEF|FRA|79
+Lisandro Martínez|DEF|ARG|83
+Matthijs de Ligt|DEF|NED|81
+Luke Shaw|DEF|ENG|78
+Diogo Dalot|DEF|POR|80
+Harry Maguire|DEF|ENG|78
+Leny Yoro|DEF|FRA|79
+Micky van de Ven|DEF|NED|84
+Cristian Romero|DEF|ARG|85
+Pedro Porro|DEF|ESP|82
+Destiny Udogie|DEF|ITA|79
+Kieran Trippier|DEF|ENG|78
+Sven Botman|DEF|NED|80
+Lewis Hall|DEF|ENG|79
+Tino Livramento|DEF|ENG|80
+Marc Guéhi|DEF|ENG|84
+Pau Torres|DEF|ESP|80
+Maxence Lacroix|DEF|FRA|80
+Daniel Muñoz|DEF|COL|80
+Alejandro Balde|DEF|ESP|83
+Íñigo Martínez|DEF|ESP|82
+Dean Huijsen|DEF|ESP|82
+Ferland Mendy|DEF|FRA|79
+Álvaro Carreras|DEF|ESP|80
+Éder Militão|DEF|BRA|84
+David Alaba|DEF|AUT|78
+Robin Le Normand|DEF|FRA|82
+Marcos Llorente|DEF|ESP|82
+Nahuel Molina|DEF|ARG|80
+José María Giménez|DEF|URU|80
+Aymeric Laporte|DEF|ESP|81
+Dani Vivian|DEF|ESP|80
+Denzel Dumfries|DEF|NED|82
+Yann Bisseck|DEF|GER|80
+Gleison Bremer|DEF|BRA|84
+Andrea Cambiaso|DEF|ITA|80
+Pierre Kalulu|DEF|FRA|79
+Evan Ndicka|DEF|CIV|79
+Gianluca Mancini|DEF|ITA|79
+Zeki Çelik|DEF|TUR|78
+Fikayo Tomori|DEF|ENG|80
+Strahinja Pavlović|DEF|SRB|80
+Alessandro Buongiorno|DEF|ITA|82
+Amir Rrahmani|DEF|KOS|80
+Giovanni Di Lorenzo|DEF|ITA|81
+Dayot Upamecano|DEF|FRA|82
+Jonathan Tah|DEF|GER|83
+Nico Schlotterbeck|DEF|GER|84
+Waldemar Anton|DEF|GER|82
+Julian Ryerson|DEF|NOR|79
+Maximilian Mittelstädt|DEF|GER|78
+Nathaniel Brown|DEF|GER|78
+David Raum|DEF|GER|78
+Antonio Silva|DEF|POR|80
+Piero Hincapié|DEF|ECU|82
+Edmond Tapsoba|DEF|BFA|79
+Hiroki Ito|DEF|JPN|79
+Willian Pacho|DEF|ECU|83
+Lucas Hernandez|DEF|FRA|80
+Illia Zabarnyi|DEF|UKR|80
+Vanderson|DEF|BRA|79
+Gonçalo Inácio|DEF|POR|82
+Nicolás Otamendi|DEF|ARG|79
+Ousmane Diomande|DEF|CIV|80
+Jorrel Hato|DEF|NED|82
+Lutsharel Geertruida|DEF|NED|80
+Wilfried Singo|DEF|CIV|80
+Davinson Sánchez|DEF|COL|79
+Ismail Jakobs|DEF|SEN|78
+Eren Elmalı|DEF|TUR|78
+Abdülkerim Bardakcı|DEF|TUR|77
+El Chadaille Bitshiabu|DEF|FRA|77
+Nélson Semedo|DEF|POR|79
+Milan Škriniar|DEF|SVK|82
+Mert Müldür|DEF|TUR|76
+Archie Brown|DEF|ENG|76
+Levent Mercan|DEF|TUR|72
+Yiğit Efe Demir|DEF|TUR|72
+Kojo Oppong|DEF|GHA|70
+Ognjen Mimović|DEF|SRB|70
+Rıdvan Yılmaz|DEF|TUR|77
+Tiago Djaló|DEF|POR|76
+Felix Uduokhai|DEF|GER|76
+Martín Zubimendi|MID|ESP|84
+Mikel Merino|MID|ESP|82
+Eberechi Eze|MID|ENG|82
+Dominik Szoboszlai|MID|HUN|85
+Ryan Gravenberch|MID|NED|85
+Curtis Jones|MID|ENG|79
+Kobbie Mainoo|MID|ENG|80
+Casemiro|MID|BRA|79
+Manuel Ugarte|MID|URU|78
+Moisés Caicedo|MID|ECU|85
+Nico González|MID|ESP|83
+Mateo Kovačić|MID|CRO|80
+Tijjani Reijnders|MID|NED|84
+Lucas Paquetá|MID|BRA|82
+Mohammed Kudus|MID|GHA|82
+James Maddison|MID|ENG|80
+Pape Matar Sarr|MID|SEN|79
+Rodrigo Bentancur|MID|URU|78
+João Palhinha|MID|POR|80
+Morgan Gibbs-White|MID|ENG|81
+Elliot Anderson|MID|ENG|82
+Bruno Guimarães|MID|BRA|85
+Sandro Tonali|MID|ITA|84
+Joelinton|MID|BRA|80
+Adam Wharton|MID|ENG|82
+Granit Xhaka|MID|SUI|80
+Xavi Simons|MID|NED|83
+João Gomes|MID|BRA|79
+Ruben Neves|MID|POR|81
+Fermín López|MID|ESP|84
+Dani Olmo|MID|ESP|84
+Eduardo Camavinga|MID|FRA|83
+Aurélien Tchouaméni|MID|FRA|85
+Brahim Díaz|MID|MAR|82
+Franco Mastantuono|MID|ARG|80
+Koke|MID|ESP|79
+Marc Casadó|MID|ESP|79
+Rodrigo De Paul|MID|ARG|82
+Pablo Barrios|MID|ESP|80
+Álex Baena|MID|ESP|83
+Manuel Locatelli|MID|ITA|80
+Adrien Rabiot|MID|FRA|83
+Teun Koopmeiners|MID|NED|82
+Khéphren Thuram|MID|FRA|81
+Piotr Zieliński|MID|POL|82
+Henrikh Mkhitaryan|MID|ARM|79
+Lorenzo Pellegrini|MID|ITA|80
+Scott McTominay|MID|SCO|85
+Billy Gilmour|MID|SCO|79
+Stanislav Lobotka|MID|SVK|82
+Youssouf Fofana|MID|FRA|82
+Samuele Ricci|MID|ITA|79
+Nicolò Rovella|MID|ITA|80
+Matías Soulé|MID|ARG|80
+Weston McKennie|MID|USA|79
+Nico Paz|MID|ARG|80
+Neil El Aynaoui|MID|MAR|78
+Leon Goretzka|MID|GER|80
+Aleksandar Pavlović|MID|GER|80
+Konrad Laimer|MID|AUT|80
+Exequiel Palacios|MID|ARG|80
+Jobe Bellingham|MID|ENG|79
+Pascal Groß|MID|GER|79
+İlkay Gündoğan|MID|GER|80
+Julian Brandt|MID|GER|80
+Felix Nmecha|MID|GER|79
+Marcel Sabitzer|MID|AUT|80
+Angelo Stiller|MID|GER|82
+Mats Wieffer|MID|NED|79
+Nicolas Seiwald|MID|AUT|80
+Christoph Baumgartner|MID|AUT|80
+João Neves|MID|POR|85
+Warren Zaïre-Emery|MID|FRA|82
+Fabián Ruiz|MID|ESP|85
+Pierre-Emile Højbjerg|MID|DEN|80
+Maghnes Akliouche|MID|FRA|81
+Mattéo Guendouzi|MID|FRA|82
+N'Golo Kanté|MID|FRA|80
+İsmail Yüksek|MID|TUR|76
+İrfan Can Kahveci|MID|TUR|77
+Bartuğ Elmaz|MID|TUR|72
+Oğuz Aydın|MID|TUR|70
+Mert Hakan Yandaş|MID|TUR|74
+Marco Asensio|MID|ESP|80
+Gabriel Sara|MID|BRA|80
+Lucas Torreira|MID|URU|77
+Lesley Ugochukwu|MID|FRA|76
+Can Uzun|MID|TUR|78
+Salih Özcan|MID|TUR|75
+Fabio Miretti|MID|ITA|76
+Fabinho|MID|BRA|78
+Abdülkadir Ömür|MID|TUR|74
+Sofyan Amrabat|MID|MAR|77
+Sergej Milinković-Savić|MID|SRB|80
+Marcelo Brozović|MID|CRO|78
+Pedro Gonçalves|MID|POR|80
+Morten Hjulmand|MID|DEN|81
+Hidemasa Morita|MID|JPN|78
+Romeo Lavia|MID|BEL|78
+Alexis Saelemaekers|MID|BEL|79
+Lamine Camara|MID|SEN|79
+Gabriel Martinelli|FWD|BRA|82
+Gabriel Jesus|FWD|BRA|78
+Kai Havertz|FWD|GER|83
+Leandro Trossard|FWD|BEL|79
+Bryan Mbeumo|FWD|CMR|83
+Matheus Cunha|FWD|BRA|83
+Rasmus Højlund|FWD|DEN|78
+Alejandro Garnacho|FWD|ARG|80
+Cody Gakpo|FWD|NED|84
+Luis Díaz|FWD|COL|86
+Hugo Ekitike|FWD|FRA|84
+Dominic Solanke|FWD|ENG|80
+Brennan Johnson|FWD|WAL|78
+Ollie Watkins|FWD|ENG|82
+Jarrod Bowen|FWD|ENG|81
+Jérémy Doku|FWD|BEL|83
+Savinho|FWD|BRA|80
+Omar Marmoush|FWD|EGY|83
+Antoine Semenyo|FWD|GHA|82
+Yoane Wissa|FWD|COD|79
+João Pedro|FWD|BRA|83
+Kaoru Mitoma|FWD|JPN|79
+Nick Woltemade|FWD|GER|82
+Anthony Gordon|FWD|ENG|82
+Jørgen Strand Larsen|FWD|NOR|78
+João Félix|FWD|POR|78
+Dušan Vlahović|FWD|SRB|80
+Ernest Poku|FWD|NED|74
+Semih Kılıçsoy|FWD|TUR|74
+Ferran Torres|FWD|ESP|80
+Rodrygo|FWD|BRA|83
+Endrick|FWD|BRA|78
+Álvaro Morata|FWD|ESP|78
+Alexander Sørloth|FWD|NOR|80
+Mikel Oyarzabal|FWD|ESP|85
+Nico Williams|FWD|ESP|85
+Iñaki Williams|FWD|GHA|78
+Takefusa Kubo|FWD|JPN|82
+Vedat Muriqi|FWD|KOS|78
+Artem Dovbyk|FWD|UKR|79
+Marcus Thuram|FWD|FRA|85
+Christian Pulisic|FWD|USA|82
+Ademola Lookman|FWD|NGA|82
+Romelu Lukaku|FWD|BEL|80
+Paulo Dybala|FWD|ARG|79
+Moise Kean|FWD|ITA|82
+Federico Chiesa|FWD|ITA|78
+Mateo Retegui|FWD|ITA|82
+Gianluca Scamacca|FWD|ITA|79
+Riccardo Orsolini|FWD|ITA|79
+Santiago Giménez|FWD|MEX|80
+Noa Lang|FWD|NED|80
+Serge Gnabry|FWD|GER|80
+Leroy Sané|FWD|GER|82
+Kingsley Coman|FWD|FRA|80
+Karim Adeyemi|FWD|GER|80
+Donyell Malen|FWD|NED|80
+Jamie Gittens|FWD|ENG|78
+Jonathan Burkardt|FWD|GER|81
+Ermedin Demirović|FWD|BIH|80
+Deniz Undav|FWD|GER|80
+Patrik Schick|FWD|CZE|82
+Victor Boniface|FWD|NGA|79
+Maximilian Beier|FWD|GER|80
+Benjamin Šeško|FWD|SVN|83
+Loïs Openda|FWD|BEL|80
+Bradley Barcola|FWD|FRA|84
+Gonçalo Ramos|FWD|POR|82
+Désiré Doué|FWD|FRA|85
+Mason Greenwood|FWD|ENG|82
+Jonathan David|FWD|CAN|81
+Folarin Balogun|FWD|USA|79
+Arnaud Kalimuendo|FWD|FRA|78
+Mehdi Taremi|FWD|IRN|79
+Vangelis Pavlidis|FWD|GRE|80
+Brian Brobbey|FWD|NED|80
+Igor Paixão|FWD|BRA|79
+Yankuba Minteh|FWD|GAM|79
+Kerem Aktürkoğlu|FWD|TUR|79
+Yunus Akgün|FWD|TUR|78`;
+const PLAYERS=RAW.trim().split('\n').map((l,i)=>{const [name,pos,ctry,ovr]=l.split('|');return {id:i,name,pos,ctry,ovr:+ovr};});
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function shuffle(a,rng=Math.random){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+// Mevki uyumu: FIT[doğalMevki][oynadığıMevki] -> performans çarpanı
+const FIT={
+  GK:{GK:1,DEF:.5,MID:.45,FWD:.3},
+  DEF:{GK:.5,DEF:1,MID:.88,FWD:.75},
+  MID:{GK:.4,DEF:.88,MID:1,FWD:.9},
+  FWD:{GK:.3,DEF:.72,MID:.9,FWD:1}};
+const BASE_FORM={3:[1,0,1],4:[1,1,1],5:[2,1,1],6:[2,2,1],7:[2,2,2],8:[3,2,2],9:[3,3,2],10:[3,4,2],11:[4,3,3]};
+const ROLE_ORDER={GK:0,DEF:1,MID:2,FWD:3};
+const atkRole=(e,r)=>r==='FWD'?e:r==='MID'?e*0.85:r==='DEF'?e*0.35:e*0.1;
+const defRole=(e,r)=>r==='FWD'?e*0.4:r==='MID'?e*0.75:r==='DEF'?e:e*1.05;
+function formations(n){const o=[];for(let d=1;d<=5;d++)for(let m=(n>=4?1:0);m<=5;m++)for(let f=1;f<=3;f++)if(1+d+m+f===n)o.push([d,m,f]);return o;}
+// Oyuncuları slotlara en yüksek toplam etkili puanla yerleştirir (bitmask DP)
+function bestAssign(players,slots){
+  const n=players.length,size=1<<n,dp=new Float64Array(size).fill(-1e9),from=new Int16Array(size).fill(-1),pc=new Uint8Array(size);
+  for(let m=1;m<size;m++)pc[m]=pc[m>>1]+(m&1);
+  dp[0]=0;
+  for(let mask=0;mask<size;mask++){
+    if(dp[mask]<-1e8)continue;const i=pc[mask];if(i>=n)continue;
+    for(let sl=0;sl<n;sl++){if(mask&(1<<sl))continue;
+      const v=dp[mask]+players[i].ovr*FIT[players[i].pos][slots[sl]],nm=mask|(1<<sl);
+      if(v>dp[nm]){dp[nm]=v;from[nm]=sl;}}
+  }
+  const assign=new Array(n);let mask=size-1;
+  for(let i=n-1;i>=0;i--){const sl=from[mask];assign[i]=sl;mask^=1<<sl;}
+  return {total:dp[size-1],assign};
+}
+// Kadroya en uygun dizilişi seçer; mevkisi uymayanları gerekli yerlere kaydırır
+function buildLineup(players){
+  const n=players.length,base=BASE_FORM[n]||BASE_FORM[11];let best=null;
+  for(const fm of formations(n)){
+    const slots=['GK',...Array(fm[0]).fill('DEF'),...Array(fm[1]).fill('MID'),...Array(fm[2]).fill('FWD')];
+    const r=bestAssign(players,slots);
+    const score=r.total-1.5*(Math.abs(fm[0]-base[0])+Math.abs(fm[1]-base[1])+Math.abs(fm[2]-base[2]));
+    if(!best||score>best.score)best={score,fm,slots,assign:r.assign};
+  }
+  const ents=players.map((p,i)=>{const role=best.slots[best.assign[i]];return {p,role,eff:p.ovr*FIT[p.pos][role]};});
+  ents.sort((x,y)=>ROLE_ORDER[x.role]-ROLE_ORDER[y.role]||y.eff-x.eff);
+  return {form:best.fm,label:best.fm.join('-'),slots:ents};
+}
+function teamStats(ents){
+  if(!ents.length)return {atk:1,def:1,ovr:0};
+  const n=ents.length;
+  return {atk:ents.reduce((s,e)=>s+atkRole(e.eff,e.role),0)/n,def:ents.reduce((s,e)=>s+defRole(e.eff,e.role),0)/n,ovr:ents.reduce((s,e)=>s+e.eff,0)/n};
+}
+function poisson(l,rng=Math.random){const L=Math.exp(-l);let k=0,p=1;do{k++;p*=rng();}while(p>L);return k-1;}
+function lambda(att,def){return clamp(0.78*Math.pow((att.atk/def.def)/0.8,3),0.15,4.5);}
+// Gol türü: normal (ceza sahası içi), uzaktan şut, penaltı
+function pickKind(rng){const r=rng();return r<0.07?'pen':r<0.2?'long':'normal';}
+function pickScorer(ents,rng,kind){
+  let w;
+  if(kind==='pen')w=ents.map(e=>e.role==='GK'?0:Math.pow(e.eff,6));
+  else{const bo=kind==='long'?{FWD:1,MID:2.2,DEF:1.7,GK:0.2}:{FWD:1,MID:1,DEF:1,GK:1};
+    w=ents.map(e=>Math.pow(atkRole(e.eff,e.role),3)*bo[e.role]);}
+  const t=w.reduce((a,b)=>a+b,0);let r=rng()*t;
+  for(let i=0;i<ents.length;i++){r-=w[i];if(r<=0)return ents[i].p;}
+  return ents[ents.length-1].p;
+}
+// Asist: orta saha > forvet > defans ağırlıklı, golü atan hariç
+function pickAssister(ents,scorer,rng,prob){
+  if(rng()>prob)return null;
+  const cand=ents.filter(e=>e.p.id!==scorer.id);if(!cand.length)return null;
+  const w=cand.map(e=>(e.role==='MID'?1:e.role==='FWD'?0.85:e.role==='DEF'?0.4:0.03)*Math.pow(e.eff,3)),t=w.reduce((a,b)=>a+b,0);let r=rng()*t;
+  for(let i=0;i<cand.length;i++){r-=w[i];if(r<=0)return cand[i].p;}
+  return cand[cand.length-1].p;
+}
+function mkEvent(side,ents,rng){
+  const kind=pickKind(rng),pl=pickScorer(ents,rng,kind);
+  const as=kind==='pen'?null:pickAssister(ents,pl,rng,kind==='long'?0.4:0.78);
+  return {min:1+Math.floor(rng()*90),side,player:pl,assist:as,kind};
+}
+function simulateMatch(homeEnts,awayEnts,rng=Math.random){
+  const hs=teamStats(homeEnts),as=teamStats(awayEnts);
+  const hg=poisson(lambda(hs,as),rng),ag=poisson(lambda(as,hs),rng);
+  const events=[];
+  for(let i=0;i<hg;i++)events.push(mkEvent('h',homeEnts,rng));
+  for(let i=0;i<ag;i++)events.push(mkEvent('a',awayEnts,rng));
+  events.sort((a,b)=>a.min-b.min);
+  return {hg,ag,events};
+}
+function buildRounds(n,double){
+  const ids=[...Array(n).keys()];if(n%2)ids.push(-1);
+  const m=ids.length,rounds=[];let arr=ids.slice();
+  for(let r=0;r<m-1;r++){
+    const round=[];
+    for(let i=0;i<m/2;i++){const a=arr[i],b=arr[m-1-i];if(a>=0&&b>=0)round.push(r%2?[b,a]:[a,b]);}
+    rounds.push(round);
+    arr=[arr[0],arr[m-1],...arr.slice(1,m-1)];
+  }
+  if(double)rounds.push(...rounds.map(rd=>rd.map(([a,b])=>[b,a])));
+  return rounds;
+}
+function newTable(n){return [...Array(n).keys()].map(i=>({i,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));}
+function applyResult(table,h,a,hg,ag){
+  const H=table[h],A=table[a];
+  H.p++;A.p++;H.gf+=hg;H.ga+=ag;A.gf+=ag;A.ga+=hg;
+  if(hg>ag){H.w++;A.l++;H.pts+=3;}else if(hg<ag){A.w++;H.l++;A.pts+=3;}else{H.d++;A.d++;H.pts++;A.pts++;}
+}
+function sortTable(t){return t.slice().sort((x,y)=>y.pts-x.pts||(y.gf-y.ga)-(x.gf-x.ga)||y.gf-x.gf||x.i-y.i);}
+
+// ---- Açık artırma motoru ----
+function maxBid(A,i){const m=A.managers[i],left=A.cfg.squad-m.squad.length;return left<=0?0:m.budget-(left-1);}
+function makeManagers(cfg,rng){
+  const BOT_NAMES=['Robo Hoca','Kaptan Bot','Mister Metal','Algoritma Hoca','Çelik Teknik','Taktik Makinesi','Hesap Hoca','Pres Bot','Kontra Bot','Libero Bot','Golcü Bot','Kanat Bot','Maestro Bot','Pivot Bot','Savaş Bot','Şampiyon Bot'];
+  return cfg.names.slice(0,cfg.n).map((nm,i)=>{
+    const bot=!!(cfg.bots&&cfg.bots[i]),base=(nm||'').trim()||(bot?BOT_NAMES[i%BOT_NAMES.length]:('Oyuncu '+(i+1)));
+    return {name:bot?'🤖 '+base:base,bot,aggr:0.85+rng()*0.35,budget:cfg.budget,squad:[]};});
+}
+// Havuz: her mevkiden herkesin dengeli kadro kurmasına yetecek kadar (+ biraz fazla) futbolcu garanti edilir
+function buildPool(cfg,rng){
+  const bf=BASE_FORM[cfg.squad]||BASE_FORM[11],tgt={GK:1,DEF:bf[0],MID:bf[1],FWD:bf[2]},extra=Math.max(1,Math.round(cfg.n/2));
+  const chosen=[];
+  for(const k of ['GK','DEF','MID','FWD']){const ids=shuffle(PLAYERS.filter(p=>p.pos===k).map(p=>p.id),rng);chosen.push(...ids.slice(0,cfg.n*tgt[k]+extra));}
+  const chosenSet=new Set(chosen),rest=shuffle(PLAYERS.map(p=>p.id).filter(id=>!chosenSet.has(id)),rng);
+  const poolSize=Math.min(PLAYERS.length,Math.max(chosen.length,cfg.n*cfg.squad+Math.max(6,cfg.n*3)));
+  return shuffle(chosen.concat(rest.slice(0,Math.max(0,poolSize-chosen.length))),rng);
+}
+function newAuction(cfg,rng=Math.random){
+  const managers=makeManagers(cfg,rng),queue=buildPool(cfg,rng);
+  const A={mode:'auction',cfg,managers,queue,discarded:[],lot:null,lotNo:0,last:null,done:false,total:queue.length,rng};
+  startLot(A);return A;
+}
+// ---- Hızlı seçim (açık artırmasız): sırayla önüne rastgele bir futbolcu gelir, "evet" al / "hayır" pas ----
+// Herkesin (insan ve bot) pas hakkı eşittir. Hakkı biten kişiye yalnızca ihtiyacı olan mevkilerden oyuncu gelir.
+function newDraft(cfg,rng=Math.random){
+  const managers=makeManagers(cfg,rng),pool=buildPool(cfg,rng),pm=cfg.passMult||2;
+  managers.forEach(m=>{m.passMax=pm*cfg.squad;m.passes=m.passMax;m.seen=new Set();});
+  const D={mode:'draft',cfg,managers,pool,rng,turn:0,cur:null,done:false,last:null,lastHuman:null,log:[],total:pool.length};
+  draftAdvance(D);return D;
+}
+function draftDraw(D,i){
+  const m=D.managers[i];
+  let c=D.pool.filter(id=>!m.seen.has(id));
+  if(m.passes<=0){const nd=needsOf(D,i),c2=D.pool.filter(id=>nd[PLAYERS[id].pos]>0);if(c2.length)c=c2;}
+  if(!c.length){m.seen.clear();c=D.pool.slice();}
+  if(!c.length){const used=new Set(D.managers.flatMap(x=>x.squad));c=PLAYERS.map(p=>p.id).filter(id=>!used.has(id));}
+  D.cur=c[Math.floor(D.rng()*c.length)];
+}
+function draftNextTurn(D){D.turn=(D.turn+1)%D.managers.length;}
+function draftTake(D,byBot){
+  const i=D.turn,m=D.managers[i],pid=D.cur;if(pid==null)return false;
+  m.squad.push(pid);const k=D.pool.indexOf(pid);if(k>=0)D.pool.splice(k,1);
+  const ev={who:i,pid,took:true};D.last=ev;if(byBot){D.log.push(ev);if(D.log.length>40)D.log.shift();}else D.lastHuman=ev;
+  D.cur=null;draftNextTurn(D);return true;
+}
+function draftPass(D,byBot){
+  const i=D.turn,m=D.managers[i],pid=D.cur;if(pid==null||m.passes<=0)return false;
+  m.passes--;m.seen.add(pid);const ev={who:i,pid,took:false};D.last=ev;if(!byBot)D.lastHuman=ev;
+  D.cur=null;draftNextTurn(D);return true;
+}
+// Botun kararı: ihtiyacı olmayan mevkiyi geçer; ihtiyaç varsa puan, kalan pas hakkına göre değişen çıtayı aşıyorsa alır
+function draftBotTake(D,i){
+  const m=D.managers[i],p=PLAYERS[D.cur],need=needsOf(D,i);
+  if(m.passes<=0)return true;
+  if(need[p.pos]<=0)return false;
+  const same=D.pool.filter(id=>PLAYERS[id].pos===p.pos),mean=same.reduce((s,id)=>s+PLAYERS[id].ovr,0)/Math.max(1,same.length);
+  const thr=mean+(m.passes/m.passMax)*5-1.5+(m.aggr-1)*2;
+  return p.ovr>=thr;
+}
+// Sıra bir insana gelene (ya da seçim bitene) kadar botların hamlelerini anında oynatır
+function draftAdvance(D){
+  let guard=0;
+  while(!D.done&&guard++<200000){
+    if(D.managers.every(m=>m.squad.length>=D.cfg.squad)){D.done=true;D.cur=null;return;}
+    const i=D.turn,m=D.managers[i];
+    if(m.squad.length>=D.cfg.squad){draftNextTurn(D);D.cur=null;continue;}
+    if(D.cur==null)draftDraw(D,i);
+    if(!m.bot)return;
+    if(draftBotTake(D,i))draftTake(D,true);else draftPass(D,true);
+  }
+}
+const MYST_MIN=85; // sürpriz kartlardan çıkabilecek en düşük puan
+function startLot(A){
+  if(A.managers.every(m=>m.squad.length>=A.cfg.squad)){A.done=true;A.lot=null;return;}
+  if(!A.queue.length){fillRemaining(A);return;}
+  const n=A.managers.length;
+  const active=A.managers.map((m,i)=>i).filter(i=>maxBid(A,i)>=1);
+  // 🎁 Sürpriz kart: ara sıra gizli bir YILDIZ (85+) gelir. Sırası gelen 1 TL'ye körlemesine alabilir, almazsa diğerleri açık artırır.
+  let pid,myst=false;
+  if(!!A.cfg.mystery&&A.lotNo>=1&&!A.lastMyst&&active.length>=2&&A.rng()<0.16){
+    const k=A.queue.findIndex(id=>PLAYERS[id].ovr>=MYST_MIN);
+    if(k>=0){pid=A.queue.splice(k,1)[0];myst=true;}
+  }
+  if(!myst)pid=A.queue.shift();
+  A.lotNo++;
+  A.lastMyst=myst;
+  A.lot={pid,bid:0,leader:-1,active,turn:-1,mystery:myst,offer:myst};
+  settle(A,(((A.lotNo-2)%n)+n)%n);
+}
+function settle(A,from){
+  const lot=A.lot,n=A.managers.length;
+  lot.active=lot.active.filter(i=>i===lot.leader||maxBid(A,i)>lot.bid);
+  if(lot.leader>=0&&lot.active.length===1){
+    const m=A.managers[lot.leader];m.squad.push(lot.pid);m.budget-=lot.bid;
+    A.last={pid:lot.pid,who:lot.leader,price:lot.bid,sold:true};A.lot=null;startLot(A);return;
+  }
+  if(lot.leader<0&&lot.active.length===0){
+    A.discarded.push(lot.pid);A.last={pid:lot.pid,sold:false};A.lot=null;startLot(A);return;
+  }
+  for(let k=1;k<=n;k++){const i=(from+k)%n;if(lot.active.includes(i)&&i!==lot.leader){lot.turn=i;return;}}
+}
+function placeBid(A,amount){
+  const lot=A.lot;if(!lot)return false;
+  if(!Number.isInteger(amount)||amount<=lot.bid||amount>maxBid(A,lot.turn))return false;
+  lot.bid=amount;lot.leader=lot.turn;settle(A,lot.turn);return true;
+}
+function passTurn(A){
+  const lot=A.lot;if(!lot)return;
+  const t=lot.turn;lot.active=lot.active.filter(i=>i!==t);settle(A,t);
+}
+// Sürpriz kartı sıradaki oyuncu 1 TL'ye alır
+function takeMystery(A){
+  const lot=A.lot;if(!lot||!lot.mystery||!lot.offer)return false;
+  const t=lot.turn;if(maxBid(A,t)<1)return false;
+  const m=A.managers[t];m.squad.push(lot.pid);m.budget-=1;
+  A.last={pid:lot.pid,who:t,price:1,sold:true,mystery:true};A.lot=null;startLot(A);return true;
+}
+// Sıradaki oyuncu istemez: futbolcu gizli kalarak açık artırmaya çıkar, o oyuncu bu lot için turdan çıkar
+function declineMystery(A){
+  const lot=A.lot;if(!lot||!lot.mystery||!lot.offer)return false;
+  const t=lot.turn;lot.offer=false;lot.active=lot.active.filter(i=>i!==t);settle(A,t);return true;
+}
+function fillRemaining(A){
+  const pool=shuffle([...A.queue,...A.discarded],A.rng);A.queue=[];A.filled=[];
+  A.managers.forEach((m,i)=>{while(m.squad.length<A.cfg.squad&&pool.length){const pid=pool.pop();m.squad.push(pid);A.filled.push({pid,who:i});}});
+  A.done=true;A.lot=null;
+}
+// ---- Bot mantığı ----
+// Bir yöneticinin hâlâ doldurması gereken mevki sayıları (hedef diziliş: 1 KL + BASE_FORM)
+function needsOf(A,i){
+  const bf=BASE_FORM[A.cfg.squad]||BASE_FORM[11],target={GK:1,DEF:bf[0],MID:bf[1],FWD:bf[2]};
+  const have={GK:0,DEF:0,MID:0,FWD:0};A.managers[i].squad.forEach(id=>have[PLAYERS[id].pos]++);
+  const u={};for(const k of ['GK','DEF','MID','FWD'])u[k]=Math.max(0,target[k]-have[k]);return u;
+}
+// Bir botun bu futbolcuya biçtiği değer. Mevkisi kadroda ihtiyaç değilse 0 (pas), ancak
+// havuzda ihtiyaçlarını karşılayacak kadar oyuncu kalmadıysa yedek plan olarak düşük değer biçer.
+function botValue(A,i,p){
+  const m=A.managers[i],left=A.cfg.squad-m.squad.length;if(left<=0)return 0;
+  const unmet=needsOf(A,i),remain=[p.id,...A.queue].map(id=>PLAYERS[id]);
+  const avail={GK:0,DEF:0,MID:0,FWD:0};remain.forEach(r=>avail[r.pos]++);
+  const fillable=['GK','DEF','MID','FWD'].reduce((s,k)=>s+Math.min(unmet[k],avail[k]),0);
+  const wants=unmet[p.pos]>0;
+  if(!wants&&(fillable>=left||p.pos==='GK'))return 0; // ikinci kaleciye hiçbir koşulda para verme
+  const same=remain.filter(r=>r.pos===p.pos),meanPos=same.reduce((s,r)=>s+r.ovr,0)/same.length;
+  const f=clamp(1+(p.ovr-meanPos)/6,0.3,2.2);
+  const W={GK:0.85,DEF:0.9,MID:1.05,FWD:1.15};
+  let demand=0;A.managers.forEach((_,j)=>demand+=needsOf(A,j)[p.pos]);
+  const scarce=wants&&avail[p.pos]<=demand?1.15:1;
+  let v=(m.budget/left)*W[p.pos]*f*m.aggr*(0.92+A.rng()*0.16)*scarce*(wants?1:0.5);
+  v=Math.min(v,left>1?m.budget*0.7:m.budget);
+  v=Math.round(v);
+  return wants?Math.max(1,v):v;
+}
+// Gizli yıldızın ihtiyacımız olan mevkiden çıkma ihtimali (kalan 85+ oyuncuların mevki dağılımına göre)
+function mysteryFit(A,i){
+  const unmet=needsOf(A,i),arr=A.queue.filter(id=>PLAYERS[id].ovr>=MYST_MIN).concat([A.lot.pid]);
+  return arr.filter(id=>unmet[PLAYERS[id].pos]>0).length/arr.length;
+}
+// Kalecisi zaten dolu olan bot, gizli kartın kaleci çıkma riskini (ikinci kaleci) almaz
+function mystGKRisk(A,i){
+  if(needsOf(A,i).GK>0)return false;
+  const arr=A.queue.filter(id=>PLAYERS[id].ovr>=MYST_MIN).concat([A.lot.pid]);
+  return arr.filter(id=>PLAYERS[id].pos==='GK').length/arr.length>0.08;
+}
+// 1 TL'lik yıldız kartı: ihtiyaç duyduğu mevkiden gelme ihtimali yüksekse alır
+function botWantsMystery(A,i){return A.managers[i].squad.length<A.cfg.squad&&!mystGKRisk(A,i)&&mysteryFit(A,i)>=0.8;}
+// Gizli yıldız için körlemesine değer: yıldız seviyesi × ihtiyaç olasılığı
+function botValueMystery(A,i){
+  const m=A.managers[i],left=A.cfg.squad-m.squad.length;if(left<=0)return 0;
+  if(mystGKRisk(A,i))return 0;
+  const p=mysteryFit(A,i);if(p<0.65)return 0;
+  const pool=A.queue.map(id=>PLAYERS[id].ovr),mean=pool.length?pool.reduce((a,b)=>a+b,0)/pool.length:80;
+  const f=clamp(1+(MYST_MIN+2-mean)/6,1,2.2);
+  let v=(m.budget/left)*f*p*m.aggr*(0.9+A.rng()*0.2)*0.9;
+  v=Math.min(v,left>1?m.budget*0.6:m.budget);
+  return Math.max(1,Math.round(v));
+}
+// Dönen değer: verilecek teklif (lot.bid'den büyük) ya da 0 = pas
+function botDecide(A,i){
+  const lot=A.lot;if(!lot.vals)lot.vals={};
+  if(lot.vals[i]===undefined)lot.vals[i]=lot.mystery?botValueMystery(A,i):botValue(A,i,PLAYERS[lot.pid]);
+  const cap=Math.min(lot.vals[i],maxBid(A,i));
+  if(cap<=lot.bid)return 0;
+  const gap=cap-lot.bid;let inc=1;
+  if(gap>3)inc=1+Math.floor(A.rng()*Math.min(3,gap/2));
+  return Math.min(cap,lot.bid+inc);
+}
+// ==/LOGIC==
+
+// ==SIM==
+const PW=105,PH=68,MATCH_SECONDS=75;
+const TEAM_HEX=['#2563eb','#dc2626','#9333ea','#ea580c','#0d9488','#db2777','#65a30d','#0891b2','#4f46e5','#b45309','#64748b','#be185d','#047857','#7c3aed','#c2410c','#1d4ed8'];
+function layoutTeam(ents,team){
+  const g={GK:[],DEF:[],MID:[],FWD:[]};ents.forEach(e=>g[e.role].push(e));
+  const nonGk=['DEF','MID','FWD'].filter(k=>g[k].length),out=[];let no=1;
+  const place=(k,x)=>{const arr=g[k].slice().sort((a,b)=>b.eff-a.eff);
+    arr.forEach((e,i)=>{const y=PH*(i+1)/(arr.length+1),st=arr.length>=5&&i%2?4:0,bx=team?PW-(x+st):x+st;
+      out.push({p:e.p,team,no:no++,pos:k,nat:e.p.pos,bx,by:y,x:bx,y,ov:null});});};
+  if(g.GK.length)place('GK',6);
+  nonGk.forEach((k,j)=>place(k,nonGk.length===1?46:26+44*j/(nonGk.length-1)));
+  return out;
+}
+class MatchSim{
+  constructor(homePs,awayPs,res,rng=Math.random){
+    this.rng=rng;this.res=res;this.teams=[layoutTeam(homePs,0),layoutTeam(awayPs,1)];
+    this.events=res.events.slice();this.ei=0;this.score=[0,0];this.clock=0;this.speed=1;
+    this.log=[];this.timers=[];this.banner=null;this.done=false;this.halfDone=false;this.skipFlag=false;
+    this.ball={x:PW/2,y:PH/2,fx:0,fy:0,tx:0,ty:0,t:1,dur:1,flying:false,target:null,cb:null};
+    this.holder=null;this.passTimer=0.5;this.poss=0;this.cur=null;this.t=0;
+    const avgE=a=>a.reduce((s,e)=>s+e.eff,0)/Math.max(1,a.length);this.str=[avgE(homePs),avgE(awayPs)];
+    this.kickoff(0);
+  }
+  all(){return this.teams[0].concat(this.teams[1]);}
+  keeperOf(ti){const T=this.teams[ti],gk=T.find(s=>s.pos==='GK');if(gk)return gk;const gx=ti?PW:0;return T.slice().sort((a,b)=>Math.abs(a.bx-gx)-Math.abs(b.bx-gx))[0];}
+  kickoff(ti){
+    this.all().forEach(s=>s.ov=null);
+    this.mode='kickoff';this.modeT=1.5;this.poss=ti;this.banner=null;
+    const T=this.teams[ti],gk=this.keeperOf(ti);
+    const c=T.filter(s=>s!==gk).sort((a,b)=>Math.abs(a.bx-PW/2)-Math.abs(b.bx-PW/2))[0]||T[0];
+    this.holder=c;c.ov={x:PW/2-(ti?-1:1)*1.5,y:PH/2};
+    this.ball.flying=false;this.ball.x=PW/2;this.ball.y=PH/2;this.passTimer=0.4;
+  }
+  after(d,fn){this.timers.push({t:d,fn});}
+  kick(target,dur,cb){
+    const b=this.ball;b.fx=b.x;b.fy=b.y;b.target=(target&&target.team!==undefined)?target:null;
+    b.tx=target.x;b.ty=target.y;b.dur=Math.max(0.15,dur);b.t=0;b.flying=true;b.cb=cb||null;this.holder=null;
+  }
+  update(dtR){
+    if(this.done)return;
+    const dt=dtR*this.speed;this.t+=dt;
+    for(const tm of this.timers)tm.t-=dt;
+    const due=this.timers.filter(x=>x.t<=0);this.timers=this.timers.filter(x=>x.t>0);due.forEach(x=>x.fn());
+    if(this.mode==='kickoff'){this.modeT-=dt;if(this.modeT<=0){this.all().forEach(s=>s.ov=null);this.mode='play';}}
+    else if(this.mode==='play'){this.clock+=dt*90/MATCH_SECONDS;this.ambient(dt);this.checkTriggers();}
+    else if(this.mode==='celebrate'){this.modeT-=dt;if(this.modeT<=0)this.kickoff(1-this.cur.ti);}
+    else if(this.mode==='break'){this.modeT-=dt;if(this.modeT<=0)this.kickoff(1);}
+    else if(this.mode==='full'){this.modeT-=dt;if(this.modeT<=0)this.done=true;}
+    this.moveBall(dt);this.movePlayers(dt);
+  }
+  checkTriggers(){
+    const e=this.events[this.ei];
+    if(e&&this.clock>=Math.max(e.min-1,1)){this.startGoal(e);return;}
+    if(!this.halfDone&&this.clock>=45){this.halfDone=true;this.mode='break';this.modeT=1.8;this.banner={text:'Devre arası'};return;}
+    if(!e&&this.clock>=90){this.mode='full';this.modeT=1.8;this.banner={text:'Maç sona erdi'};}
+  }
+  // Rakip oyuncuya olan en yakın mesafe
+  oppDist(x,y,ti){let m=1e9;for(const o of this.teams[1-ti]){const d=Math.hypot(o.x-x,o.y-y);if(d<m)m=d;}return m;}
+  ambient(dt){
+    if(this.ball.flying)return;
+    if(!this.holder){this.holder=this.teams[this.poss].find(s=>s.pos!=='GK')||this.teams[this.poss][0];}
+    this.passTimer-=dt;if(this.passTimer>0)return;
+    const H=this.holder,ti=H.team,dir=ti?-1:1,gx=ti?0:PW,dg=Math.abs(gx-H.x);
+    const mates=this.teams[ti].filter(s=>s!==H),nearOpp=this.oppDist(H.x,H.y,ti),pressure=nearOpp<7;
+    const pick=(items,ws)=>{let t=ws.reduce((a,b)=>a+b,0),x=this.rng()*t;for(let i=0;i<items.length;i++){x-=ws[i];if(x<=0)return items[i];}return items[items.length-1];};
+    // Kaleci: ileriye, savunma/orta sahaya dağıtır
+    if(H.pos==='GK'){
+      const c=mates.filter(s=>s.pos!=='GK'&&(s.x-H.x)*dir>6);if(!c.length){this.passTimer=0.5;return;}
+      const t=pick(c,c.map(s=>Math.exp(-Math.abs(Math.hypot(s.x-H.x,s.y-H.y)-26)/14)));
+      this.kick(t,clamp(Math.hypot(t.x-H.x,t.y-H.y)/30,0.5,1.4),()=>{this.holder=t;this.poss=ti;this.passTimer=0.3+this.rng()*0.3;});return;
+    }
+    // Şut: kaleye yaklaştıkça artar, uzaktan seyrek
+    let pS=0;if(dg<20)pS=0.3;else if(dg<28)pS=0.12;else if(dg<38&&H.pos!=='DEF')pS=H.pos==='MID'?0.06:0.04;
+    if(this.rng()<pS){this.shoot(H);return;}
+    // Top taşıma (dribling): baskı yoksa ve önünde alan varsa
+    if(!pressure&&dg>22&&this.rng()<0.25){
+      const nx=clamp(H.x+dir*(6+this.rng()*7),2,PW-2),ny=clamp(H.y+(this.rng()-0.5)*10,4,PH-4);
+      H.ov={x:nx,y:ny};this.passTimer=0.8;
+      this.after(0.75,()=>{if(H.ov&&H.ov.x===nx)H.ov=null;});return;
+    }
+    // Pas: ileriye ve boştaki oyuncuya tercih; geriye pas yalnızca baskı altında ya da nadiren
+    const cands=mates.filter(s=>s.pos!=='GK'||(pressure&&dg>PW*0.55));
+    const ws=cands.map(s=>{
+      const dx=(s.x-H.x)*dir,d=Math.hypot(s.x-H.x,s.y-H.y);if(d<5)return 0.01;
+      let f=dx>=0?1+dx/9:(dx>-8?0.1:0.025);if(pressure&&dx<0)f*=2.2;if(s.pos==='GK')f*=0.4;
+      const range=Math.exp(-Math.pow((d-19)/15,2)),open=clamp(this.oppDist(s.x,s.y,ti)/9,0.35,1.4);
+      return Math.pow(f*range*open,1.5)+0.0001;});
+    const t=pick(cands,ws),d=Math.hypot(t.x-H.x,t.y-H.y),dx=(t.x-H.x)*dir;
+    // Top kaybı: pasın uzunluğuna, rakibin baskısına ve takım gücü farkına bağlı
+    const ratio=this.str[1-ti]/Math.max(1,this.str[ti]);
+    const pInt=clamp((0.05+d/480)*Math.pow(ratio,3)*(dx>25?1.25:1)*(this.oppDist(t.x,t.y,ti)<5?1.5:1),0.02,0.3);
+    if(this.rng()<pInt){
+      const mx=(H.x+t.x)/2,my=(H.y+t.y)/2,o=this.teams[1-ti].slice().sort((a,b)=>Math.hypot(a.x-mx,a.y-my)-Math.hypot(b.x-mx,b.y-my))[0];
+      this.kick(o,clamp(d/34,0.4,1),()=>{this.holder=o;this.poss=o.team;this.passTimer=0.3;});return;
+    }
+    this.kick(t,clamp(d/32,0.4,1.3),()=>{this.holder=t;this.passTimer=0.2+this.rng()*0.3;});
+  }
+  shoot(H){
+    const ti=H.team,dir=ti?-1:1,gx=dir>0?PW:0,gk=this.keeperOf(1-ti),r=this.rng();
+    this.passTimer=0.9;
+    if(r<0.42){
+      const gy=PH/2+(this.rng()-0.5)*9;gk.ov={x:gk.bx,y:clamp(gy,25,43)};
+      this.kick({x:gx,y:gy},0.5,()=>{this.kick(gk,0.35,()=>{this.holder=gk;this.poss=1-ti;gk.ov=null;this.passTimer=0.8;});});
+    }else if(r<0.78){
+      const gy=PH/2+(this.rng()<0.5?-1:1)*(6+this.rng()*6);
+      this.kick({x:gx+dir*4,y:gy},0.55,()=>{this.after(0.3,()=>{this.kick(gk,0.9,()=>{this.holder=gk;this.poss=1-ti;this.passTimer=0.8;});});});
+    }else{ // savunma önünü kesti
+      const o=this.teams[1-ti].slice().sort((a,b)=>Math.hypot(a.x-H.x,a.y-H.y)-Math.hypot(b.x-H.x,b.y-H.y))[0];
+      this.kick(o,0.3,()=>{this.holder=o;this.poss=o.team;this.passTimer=0.4;});
+    }
+  }
+  // Gol sahnesi: önce hücum organizasyonu (orta sahaya pas), sonra asist ve şut. Tür: normal / uzaktan / penaltı
+  startGoal(e){
+    const ti=e.side==='h'?0:1,T=this.teams[ti],dir=ti?-1:1,gx=dir>0?PW:0,kind=e.kind||'normal';
+    const scorer=T.find(s=>s.p.id===e.player.id)||T[0];
+    const assist=e.assist?(T.find(s=>s.p.id===e.assist.id&&s!==scorer)||null):null;
+    this.ei++;this.mode='goalseq';this.poss=ti;this.cur={e,ti,scorer,assist};this.holder=null;this.timers=[];
+    const rg=()=>this.rng();
+    const gk=this.keeperOf(1-ti),gy=PH/2+(rg()-0.5)*(kind==='pen'?6:5);
+    let sx,sy;
+    if(kind==='pen'){sx=gx-dir*11;sy=PH/2;}
+    else if(kind==='long'){sx=gx-dir*(25+rg()*10);sy=PH/2+(rg()-0.5)*26;}
+    else{sx=gx-dir*(8+rg()*8);sy=PH/2+(rg()-0.5)*16;}
+    scorer.ov={x:sx,y:sy};
+    const finish=()=>{
+      gk.ov={x:gk.bx,y:clamp(PH/2+(gy-PH/2)*-0.6,26,42)};
+      this.kick({x:gx,y:gy},kind==='long'?0.8:kind==='pen'?0.45:0.5,()=>this.goalScored());
+    };
+    const chain=(list,i,done)=>{
+      if(i>=list.length){done();return;}
+      const p=list[i];this.kick(p,0.6,()=>{this.holder=p;this.after(0.3,()=>chain(list,i+1,done));});
+    };
+    if(kind==='pen'){
+      const b=this.ball;this.kick({x:sx,y:sy},clamp(Math.hypot(b.x-sx,b.y-sy)/40,0.5,1.2),()=>{this.holder=scorer;this.after(0.9,finish);});
+      return;
+    }
+    const list=[];
+    // top kendi yarı sahadaysa önce bir orta saha oyuncusuna ilerlet
+    const bx=this.ball.x,behind=dir>0?bx<PW*0.45:bx>PW*0.55;
+    if(behind){
+      const mids=T.filter(s=>s!==scorer&&s!==assist&&s.pos!=='GK').sort((p,q)=>Math.abs(p.x-PW/2)-Math.abs(q.x-PW/2));
+      if(mids[0]){mids[0].ov={x:PW/2+dir*(rg()*8-2),y:clamp(mids[0].y+(rg()-0.5)*12,8,PH-8)};list.push(mids[0]);}
+    }
+    if(assist){
+      if(kind==='long')assist.ov={x:gx-dir*(38+rg()*10),y:PH/2+(rg()-0.5)*30};
+      else if(rg()<0.55)assist.ov={x:gx-dir*(14+rg()*10),y:rg()<0.5?7:PH-7}; // orta (kanat)
+      else assist.ov={x:gx-dir*(26+rg()*8),y:PH/2+(rg()-0.5)*30};          // ara pas
+      list.push(assist);
+    }
+    list.push(scorer);
+    chain(list,0,()=>this.after(0.45,finish));
+  }
+  goalScored(){
+    const {e,ti,scorer}=this.cur,dir=ti?-1:1,gx=dir>0?PW:0;
+    this.score[ti]++;this.clock=Math.max(this.clock,e.min);this.log.push({min:e.min,ti,name:e.player.name,assist:e.assist?e.assist.name:null,kind:e.kind||'normal'});
+    const tag=e.kind==='pen'?' (penaltı)':e.kind==='long'?' (uzaktan)':'';
+    this.mode='celebrate';this.modeT=2.8;this.banner={text:'GOL!',sub:e.player.name+" "+e.min+"'"+tag,sub2:e.assist?'Asist: '+e.assist.name:'',ti};
+    this.holder=null;this.ball.flying=false;this.ball.x=gx;this.ball.y=this.ball.ty;
+    const cx=gx-dir*4,cy=scorer.y>PH/2?PH-5:5;scorer.ov={x:cx,y:cy};
+    this.teams[ti].forEach(s=>{if(s!==scorer&&s.pos!=='GK')s.ov={x:cx-dir*(2+this.rng()*7),y:cy+(cy>PH/2?-1:1)*(1+this.rng()*8)};});
+  }
+  skipToEnd(){
+    while(this.ei<this.events.length){const e=this.events[this.ei++],ti=e.side==='h'?0:1;this.score[ti]++;this.log.push({min:e.min,ti,name:e.player.name,assist:e.assist?e.assist.name:null,kind:e.kind||'normal'});}
+    this.clock=90;this.mode='full';this.done=true;
+  }
+  moveBall(dt){
+    const b=this.ball;
+    if(b.flying){
+      if(b.target){b.tx=b.target.x;b.ty=b.target.y;}
+      b.t+=dt/b.dur;const p=Math.min(1,b.t),e=p*(2-p);
+      b.x=b.fx+(b.tx-b.fx)*e;b.y=b.fy+(b.ty-b.fy)*e;
+      if(p>=1){b.flying=false;const cb=b.cb;b.cb=null;if(cb)cb();}
+    }else if(this.holder){const d=this.holder.team?-1:1;b.x=this.holder.x+d*1.3;b.y=this.holder.y+0.3;}
+  }
+  movePlayers(dt){
+    const b=this.ball,k=Math.min(1,dt*2.6);
+    for(const ti of [0,1]){
+      const dir=ti?-1:1,has=this.poss===ti;
+      for(const s of this.teams[ti]){
+        let tx,ty;
+        if(s.ov){tx=s.ov.x;ty=s.ov.y;}
+        else if(s.pos==='GK'){tx=s.bx;ty=clamp(s.by+(b.y-PH/2)*0.2,22,46);}
+        else{
+          const push=has?7:-4,wob=Math.sin(this.t*0.9+s.no*1.7)*1.4,wob2=Math.cos(this.t*0.7+s.no*2.3)*1.4;
+          tx=s.bx+dir*push+(b.x-PW/2)*0.2+(b.x-s.bx)*0.12+wob;ty=s.by+(b.y-s.by)*0.18+wob2;
+          if(s===this.holder)tx+=dir*3;
+        }
+        s.x+=(tx-s.x)*k;s.y+=(ty-s.y)*k;
+        s.x=clamp(s.x,1,PW-1);s.y=clamp(s.y,1,PH-1);
+      }
+    }
+  }
+}
+// ==/SIM==
+
+// ---- Arayüz ----
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const COL=TEAM_HEX.map((_,i)=>'var(--c'+i+')');
+TEAM_HEX.forEach((c,i)=>document.documentElement.style.setProperty('--c'+i,c));
+const POS_TR={GK:'KL',DEF:'DEF',MID:'OS',FWD:'FV'};
+const POS_ORDER={GK:0,DEF:1,MID:2,FWD:3};
+const P=id=>PLAYERS[id];
+let cfg={n:4,names:Array(16).fill(''),bots:Array(16).fill(false),squad:4,budget:20,double:true,mystery:true,mode:'auction',passMult:2};
+let botTimer=null;
+let screen='setup',A=null,L=null;
+
+function posPill(p){return `<span class="pill pos-${p.pos}">${POS_TR[p.pos]}</span>`;}
+function rolePill(r){return `<span class="pill pos-${r}">${POS_TR[r]}</span>`;}
+function chipE(e){const off=e.role!==e.p.pos;return `<span>${rolePill(e.role)} ${esc(e.p.name)} <b>${e.p.ovr}</b>${off?` <em title="Doğal mevkisi: ${POS_TR[e.p.pos]}" style="color:var(--warn);font-style:normal">⚠ ${POS_TR[e.p.pos]}→${POS_TR[e.role]}</em>`:''}</span>`;}
+function chip(p){return `<span>${posPill(p)} ${esc(p.name)} <b>${p.ovr}</b></span>`;}
+
+function render(){
+  const app=$('app');
+  if(screen==='setup')app.innerHTML=setupHTML();
+  else if(screen==='auction')app.innerHTML=A.mode==='draft'?draftHTML():auctionHTML();
+  else if(screen==='squads')app.innerHTML=squadsHTML();
+  else app.innerHTML=leagueHTML();
+  window.scrollTo(0,0);
+}
+
+// --- Kurulum ---
+function playersHTML(){
+  return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:2px 14px">`+[...Array(cfg.n).keys()].map(i=>`<div><label style="margin:8px 0 4px">${i+1}. oyuncu <span style="color:${COL[i]}">●</span></label>
+    <div class="row seg" style="flex-wrap:nowrap;gap:6px"><div class="row" style="flex:none;flex-wrap:nowrap;gap:6px">
+      <button style="padding:10px 12px" class="${!cfg.bots[i]?'on':''}" onclick="setBot(${i},false)" title="İnsan">👤</button>
+      <button style="padding:10px 12px" class="${cfg.bots[i]?'on':''}" onclick="setBot(${i},true)" title="Bot">🤖</button></div>
+      <input type="text" maxlength="16" style="flex:1;min-width:0" placeholder="${cfg.bots[i]?'Bot adı (isteğe bağlı)':'Oyuncu '+(i+1)}" value="${esc(cfg.names[i])}" oninput="cfg.names[${i}]=this.value"></div></div>`).join('')+`</div>`;
+}
+function setupHTML(){
+  return `<h1>⚽ Transfer Savaşı</h1><p class="sub">Aynı cihazda sırayla oyna: açık artırmayla kadronu kur, ligde yüzleş.</p>
+  <div class="card"><h2>Oyuncular: <span id="nv">${cfg.n}</span> kişi</h2>
+    <input type="range" id="nrange" min="2" max="16" value="${cfg.n}" oninput="setN(+this.value)">
+    <div class="row" style="margin:8px 0 4px"><button onclick="setAllBots(false)">👤 Hepsi insan</button><button onclick="setAllBots(true)">🤖 Hepsi bot</button></div>
+    <div id="plist">${playersHTML()}</div>
+  </div>
+  <div class="card"><h2>Kadro kurma yöntemi</h2>
+    <div class="row seg"><button class="${cfg.mode==='auction'?'on':''}" onclick="setMode('auction')">🔨 Açık artırma</button><button class="${cfg.mode==='draft'?'on':''}" onclick="setMode('draft')">🃏 Hızlı seçim</button></div>
+    <p class="note" style="margin-top:8px">${cfg.mode==='auction'?'Her futbolcu için teklif verilir. Çok oyunculu / botlu oyunlarda uzun sürebilir.':'Açık artırma yok: önüne gelen futbolcuya <b>evet</b> (al) ya da <b>hayır</b> (pas) dersin. Botlar da aynı kurallarla anında seçer. Çok botlu oyunlar için ideal.'}</p>
+    ${cfg.mode==='draft'?`<label>Pas (hayır) hakkı: <b>${cfg.passMult}× kadro = ${cfg.passMult*cfg.squad}</b> <span class="muted">(herkese eşit)</span></label>
+    <div class="row seg">${[1,2,3].map(k=>`<button class="${cfg.passMult===k?'on':''}" onclick="setPass(${k})">${['Az','Orta','Çok'][k-1]} (${k}×)</button>`).join('')}</div>`:''}
+  </div>
+  <div class="card"><h2>Ayarlar</h2>
+    <label>Kadro sayısı: <span id="sqv">${cfg.squad}</span></label>
+    <input type="range" id="sq" min="3" max="11" value="${cfg.squad}" oninput="setSquad(+this.value)">
+    ${cfg.mode==='auction'?`<label>Bütçe (her oyuncuya eşit): <span id="bgv">${cfg.budget}</span> TL</label>
+    <input type="range" id="bg" min="10" max="100" value="${cfg.budget}" oninput="setBudget(+this.value)">
+    <p class="note">Her kadro yeri için en az 1 TL gerekir; bu yüzden bütçe kadro sayısından az olamaz.</p>`:''}
+    <label><input type="checkbox" ${cfg.double?'checked':''} onchange="cfg.double=this.checked"> Çift devreli lig (iç saha / deplasman)</label>
+    ${cfg.mode==='auction'?`<label><input type="checkbox" ${cfg.mystery?'checked':''} onchange="cfg.mystery=this.checked"> 🎁 Sürpriz yıldız kartları (arada bir, 85+ puanlı)</label>`:''}
+  </div>
+  <button class="primary" style="width:100%;font-size:1.1rem" onclick="startGame()">${cfg.mode==='auction'?'Açık artırmayı başlat':'Hızlı seçimi başlat'}</button>
+  <details class="card" style="margin-top:14px"><summary>Nasıl oynanır?</summary>
+    <p>2–16 kişi oynayabilir. Her futbolcu 0 TL'den açılır. Sırası gelen oyuncu teklif verir ya da pas geçer. Pas geçen o futbolcu için turdan çıkar; son kalan en yüksek teklif sahibi futbolcuyu alır. Bir oyuncu, kalan boş kadro yerleri için 1'er TL ayırmak zorundadır.</p>
+    <p>🃏 <b>Hızlı seçim:</b> açık artırma yerine her yöneticinin önüne sırayla rastgele bir futbolcu gelir. <b>Evet</b> dersen kadroya girer, <b>hayır</b> dersen pas geçersin (pas hakkın sınırlıdır ve herkes için eşittir). Hakkın bitince önüne yalnızca kadrondaki eksik mevkilerden futbolcu gelir. Botlar da aynı kuralla anında seçer: ihtiyaçları olmayan mevkiyi geçer, ihtiyaç duyduklarında ise puana göre karar verir. Böylece 15 bot + 1 insan gibi oyunlar dakikalar yerine birkaç saniyede kurulur.</p>
+    <p>🎁 <b>Sürpriz kart</b> (açık artırma modunda): arada bir, gizli bir <b>yıldız (85 ve üzeri puanlı futbolcu)</b> gelir. O lotta sırası gelen oyuncu, kim çıkacağını bilmeden <b>1 TL</b>'ye kartı alabilir. İstemezse futbolcu gizli kalarak açık artırmaya çıkar, diğer oyuncular körlemesine teklif verir (istemeyen o lotta turdan çıkar). Futbolcunun kim olduğu satıldıktan sonra açıklanır. Mevkisi ihtiyacına uymayabilir, risk sende!</p>
+    <p>Her oyuncu yerine 🤖 Bot seçebilirsin. Botlar dengeli bir kadro hedefler (1 kaleci + defans/orta saha/forvet); yalnızca kadrosunda boş kalan mevkideki futbolculara, bütçesine ve futbolcunun puanına göre teklif verir. Mevkisi dolmuş oyuncuya (ör. ikinci kaleci) pas geçer. Sürpriz kartı da mevki ihtiyacına uyma olasılığı yüksekse alırlar. Tüm yerleri bot yaparsan oyunu izleyebilirsin.</p>
+    <p>Kadrolar dolunca lig başlar. Takım gücü; hücum (FV/OS) ve savunma (DEF/KL) ortalamalarından hesaplanır, maçlar buna göre şansa da yer bırakarak simüle edilir. Dengeli kadro kur! Kadroda eksik mevki varsa (ör. forvet yok) oyuncular otomatik kaydırılır; ama doğal mevkisi dışında oynayanların performansı düşer. Sezon sonunda <b>gol krallığı</b> ve <b>asist krallığı</b> belli olur.</p>
+    <p class="note">Havuzda yaklaşık 400 güncel futbolcu var (Süper Lig takımları dahil). Puanlar yaklaşık değerlerdir, kadrolar 2026-27 sezonu başı baz alınmıştır ve uygulamanın içine gömülüdür (internet gerekmez).</p>
+  </details>`;
+}
+function setMode(m){cfg.mode=m;render();}
+function setPass(k){cfg.passMult=k;render();}
+function setN(k){cfg.n=k;$('nv').textContent=k;$('plist').innerHTML=playersHTML();}
+function setBot(i,v){cfg.bots[i]=v;$('plist').innerHTML=playersHTML();}
+function setAllBots(v){for(let i=0;i<cfg.bots.length;i++)cfg.bots[i]=v;$('plist').innerHTML=playersHTML();}
+// Sırası bota geldiyse kısa bir bekleyişle hamlesini yaptır
+function scheduleBot(){
+  clearTimeout(botTimer);
+  if(screen!=='auction'||!A||!A.lot)return;
+  const t=A.lot.turn;if(!A.managers[t].bot)return;
+  const ref=A,allBots=A.managers.every(m=>m.bot);
+  botTimer=setTimeout(()=>{
+    if(A!==ref||screen!=='auction'||!A.lot||A.lot.turn!==t)return;
+    const lot=A.lot;
+    if(lot.mystery&&lot.offer){if(botWantsMystery(A,t)&&takeMystery(A)){}else declineMystery(A);afterAuction();return;}
+    const d=botDecide(A,t);
+    if(d>lot.bid&&placeBid(A,d)){}else passTurn(A);
+    afterAuction();
+  },allBots?250:800);
+}
+function setSquad(v){cfg.squad=v;if(cfg.budget<v){cfg.budget=v;const b=$('bg');if(b){b.value=v;$('bgv').textContent=v;}}$('sqv').textContent=v;}
+function setBudget(v){cfg.budget=v;if(cfg.squad>v){cfg.squad=v;$('sq').value=v;$('sqv').textContent=v;}$('bgv').textContent=v;}
+function startGame(){clearTimeout(botTimer);A=cfg.mode==='draft'?newDraft(cfg):newAuction(cfg);screen=A.done?'squads':'auction';render();scheduleBot();}
+
+// --- Açık artırma ---
+function auctionHTML(){
+  const lot=A.lot,p=P(lot.pid),t=lot.turn,m=A.managers[t],mx=maxBid(A,t),min=lot.bid+1;
+  let last='';
+  if(A.last){const lp=P(A.last.pid);last=A.last.sold?`<div class="banner">${A.last.mystery?'🎁 Sürpriz kart: ':'✅ '}${posPill(lp)} ${esc(lp.name)} <b>${lp.ovr}</b> → <b>${esc(A.managers[A.last.who].name)}</b> (${A.last.price} TL)</div>`:`<div class="banner no">❌ ${esc(lp.name)} satılmadı</div>`;}
+  const quick=[1,2,5,10].map(k=>`<button ${lot.bid+k>mx?'disabled':''} onclick="bidNow(${lot.bid+k})">+${k} → ${lot.bid+k} TL</button>`).join('');
+  const mgrs=A.managers.map((mm,i)=>{
+    const st=lot.active.includes(i)?(i===lot.leader?'👑 önde':(i===t?'🎯 sırada':'turda')):'pas';
+    return `<div class="card mgr ${i===t?'turn':''}" style="border-left-color:${COL[i]};margin:0"><b>${esc(mm.name)}</b> <span class="pill">${st}</span>
+      <small>Bütçe: <b>${mm.budget} TL</b> · Kadro ${mm.squad.length}/${A.cfg.squad}</small>
+      <div class="chips">${mm.squad.map(id=>chip(P(id))).join('')}</div></div>`;}).join('');
+  return `<h1>🔨 Açık artırma</h1><p class="sub">Futbolcu ${A.lotNo}/${A.total}</p>${last}
+  ${lot.mystery?`<div class="card lot" style="border-color:var(--gold)"><span class="pill" style="background:var(--gold);color:#422006">🎁 SÜRPRİZ KART</span><div class="name">❓ Gizli yıldız</div><div class="ovr" style="background:var(--muted)">85+</div>
+    <div class="note" style="margin-top:6px">İçinden <b>85 ve üzeri</b> puanlı bir yıldız çıkacak. Kim olduğu ve mevkisi satıldıktan sonra açıklanır.</div>`:
+  `<div class="card lot"><span class="muted">${posPill(p)} ${p.ctry}</span><div class="name">${esc(p.name)}</div><div class="ovr">${p.ovr}</div>`}
+    <div style="margin-top:12px" class="muted">${lot.mystery&&lot.offer?'Kart fiyatı':'Güncel teklif'}</div><div class="bid">${lot.mystery&&lot.offer?1:lot.bid} TL</div>
+    <div class="muted">${lot.leader>=0?'Önde: <b>'+esc(A.managers[lot.leader].name)+'</b>':'Henüz teklif yok'}</div></div>
+  ${m.bot?`<div class="card" style="border-color:${COL[t]}"><h2>Sıra: ${esc(m.name)} <span class="muted" style="font-weight:400">· düşünüyor…</span></h2>
+    <p class="note">${lot.mystery&&lot.offer?'Bot sürpriz kartı alıp almayacağına karar veriyor.':'Bot hamlesini yapıyor, birazdan teklif verecek ya da pas geçecek.'}</p></div>`:
+  lot.mystery&&lot.offer?`<div class="card" style="border-color:var(--gold)"><h2>🎁 ${esc(m.name)}, sürpriz kart hakkın var! <span class="muted" style="font-weight:400">· cihazı ver</span></h2>
+    <p class="note">İçinden <b>85+ puanlı bir yıldız</b> çıkacak; kimin (ve hangi mevkiden) çıkacağını bilmeden <b>1 TL</b>'ye alabilirsin. İstemezsen futbolcu gizli kalarak açık artırmaya çıkar ve diğerleri teklif verir; bu futbolcu için sen turdan çıkmış olursun.</p>
+    <div class="row"><button class="primary" onclick="doMystery(true)">🎁 1 TL'ye al</button><button onclick="doMystery(false)">Açık artırmaya çıkar</button></div></div>`:
+  `<div class="card" style="border-color:${COL[t]}"><h2>Sıra: ${esc(m.name)} <span class="muted" style="font-weight:400">· cihazı ver</span></h2>
+    <p class="note">En fazla teklif: <b>${mx} TL</b> (kalan boş yerler için ${m.budget-mx} TL ayrıldı)</p>
+    <div class="row">${quick}</div>
+    <div class="row" style="margin-top:10px"><input type="number" id="cb" min="${min}" max="${mx}" value="${min}" style="flex:1;min-width:100px">
+      <button class="primary" onclick="bidCustom()">Teklif ver</button><button class="danger" onclick="doPass()">Pas</button></div></div>`}
+  <div class="grid">${mgrs}</div>`;
+}
+// --- Hızlı seçim ekranı ---
+function draftHTML(){
+  const D=A,t=D.turn,m=D.managers[t],p=P(D.cur),need=needsOf(D,t),n=D.managers.length;
+  const needTxt=['GK','DEF','MID','FWD'].filter(k=>need[k]>0).map(k=>`${POS_TR[k]} ${need[k]}`).join(' · ')||'—';
+  const fits=need[p.pos]>0,total=n*D.cfg.squad,got=D.managers.reduce((s,x)=>s+x.squad.length,0),forced=m.passes<=0;
+  let lh='';
+  if(D.lastHuman){const lp=P(D.lastHuman.pid),w=D.managers[D.lastHuman.who];
+    lh=D.lastHuman.took?`<div class="banner">✅ ${esc(w.name)}: ${posPill(lp)} ${esc(lp.name)} <b>${lp.ovr}</b> kadroya alındı</div>`:`<div class="banner no">❌ ${esc(w.name)}: ${esc(lp.name)} pas geçildi</div>`;}
+  const bots=D.managers.filter(x=>x.bot).length;
+  const botLog=D.log.length?`<details class="card"><summary>🤖 Botların son seçimleri (${D.log.length})</summary><div class="note" style="margin-top:6px">${D.log.slice(-14).reverse().map(ev=>`${esc(D.managers[ev.who].name)} → ${esc(P(ev.pid).name)} <b>${P(ev.pid).ovr}</b>`).join('<br>')}</div></details>`:'';
+  const humans=D.managers.map((x,i)=>i).filter(i=>!D.managers[i].bot);
+  const cards=humans.map(i=>{const mm=D.managers[i];
+    return `<div class="card mgr ${i===t?'turn':''}" style="border-left-color:${COL[i]};margin:0"><b>${esc(mm.name)}</b> <span class="pill">${i===t?'🎯 sırada':'bekliyor'}</span>
+      <small>Kadro ${mm.squad.length}/${D.cfg.squad} · Pas hakkı: <b>${mm.passes}/${mm.passMax}</b></small>
+      <div class="chips">${mm.squad.map(id=>chip(P(id))).join('')}</div></div>`;}).join('');
+  return `<h1>🃏 Hızlı seçim</h1><p class="sub">Kadrolar: ${got}/${total} dolu${bots?` · ${bots} bot anında seçiyor`:''}</p>${lh}
+  <div class="card lot"><div class="muted">${esc(m.name)}, önüne gelen futbolcu</div><div style="margin:6px 0"><span class="muted">${posPill(p)} ${p.ctry}</span></div>
+    <div class="name">${esc(p.name)}</div><div class="ovr">${p.ovr}</div>
+    <div class="note" style="margin-top:10px">${fits?'✅ Bu mevkiye ihtiyacın var':'⚠️ Bu mevki kadronda dolu'} · Eksik mevkilerin: <b>${needTxt}</b></div></div>
+  <div class="card" style="border-color:${COL[t]}"><div class="row">
+      <button class="primary" style="flex:1;font-size:1.1rem" onclick="draftYes()">✅ Evet, al</button>
+      <button class="danger" style="flex:1;font-size:1.1rem" ${forced?'disabled':''} onclick="draftNo()">❌ Hayır</button></div>
+    <p class="note" style="margin-top:8px">${forced?'Pas hakkın bitti: gelen futbolcu eksik mevkilerinden seçiliyor, almalısın.':'Kalan pas hakkın: <b>'+m.passes+'</b> / '+m.passMax}</p></div>
+  ${botLog}<div class="grid">${cards}</div>`;
+}
+function afterDraft(){screen=A.done?'squads':'auction';render();}
+function draftYes(){if(!draftTake(A,false))return;draftAdvance(A);afterDraft();}
+function draftNo(){if(!draftPass(A,false))return;draftAdvance(A);afterDraft();}
+function afterAuction(){screen=A.done?'squads':'auction';render();scheduleBot();}
+function bidNow(x){placeBid(A,x);afterAuction();}
+function bidCustom(){
+  const v=parseInt($('cb').value,10),lot=A.lot;
+  if(!placeBid(A,v)){alert('Geçerli teklif: '+(lot.bid+1)+' – '+maxBid(A,lot.turn)+' TL arası, tam sayı.');return;}
+  afterAuction();
+}
+function doPass(){passTurn(A);afterAuction();}
+function doMystery(take){if(take)takeMystery(A);else declineMystery(A);afterAuction();}
+
+// --- Kadrolar ---
+function teamPlayers(i){return A.managers[i].squad.map(P);}
+function lineupOf(i){const m=A.managers[i];return m.lineup||(m.lineup=buildLineup(teamPlayers(i)));}
+function squadsHTML(){
+  const note=A.filled&&A.filled.length?`<div class="banner">Havuz bittiği için ${A.filled.length} boş kadro yeri rastgele ücretsiz oyuncularla dolduruldu.</div>`:'';
+  const cards=A.managers.map((m,i)=>{
+    const lu=lineupOf(i),s=teamStats(lu.slots);
+    const bar=(l,v)=>`<div>${l} <b>${Math.round(v)}</b></div><div class="bar"><i style="width:${clamp(v,0,100)}%"></i></div>`;
+    return `<div class="card mgr" style="border-left-color:${COL[i]};margin:0"><h2>${esc(m.name)}</h2>
+      <small class="muted">Kalan bütçe: ${m.budget} TL · Diziliş: <b>${lu.label}</b> (DEF-OS-FV)</small>${bar('Genel',s.ovr)}${bar('Hücum',s.atk/0.75)}${bar('Savunma',s.def/0.9)}
+      <div class="chips">${lu.slots.map(chipE).join('')}</div></div>`;}).join('');
+  return `<h1>📋 Kadrolar hazır</h1><p class="sub">Diziliş otomatik kurulur. ⚠ işareti, oyuncunun doğal mevkisi dışında oynatıldığını gösterir (performansı düşer).</p>${note}<div class="grid">${cards}</div>
+  <button class="primary" style="width:100%;font-size:1.1rem;margin-top:14px" onclick="startLeague()">Fikstürü oluştur ve lige başla</button>`;
+}
+
+// --- Lig ---
+function startLeague(){
+  L={rounds:buildRounds(A.managers.length,cfg.double),week:0,table:newTable(A.managers.length),results:[],scorers:{},assisters:{},busy:false,skip:false};
+  screen='league';render();
+}
+const sleep=ms=>L.skip?Promise.resolve():new Promise(r=>setTimeout(r,ms));
+function record(h,a,res){
+  applyResult(L.table,h,a,res.hg,res.ag);
+  (L.results[L.week]=L.results[L.week]||[]).push({h,a,hg:res.hg,ag:res.ag,events:res.events});
+  res.events.forEach(e=>{const tm=e.side==='h'?h:a;
+    const s=L.scorers[e.player.id]=L.scorers[e.player.id]||{p:e.player,team:tm,goals:0};s.goals++;
+    if(e.assist){const q=L.assisters[e.assist.id]=L.assisters[e.assist.id]||{p:e.assist,team:tm,assists:0};q.assists++;}});
+}
+const M=3;
+function drawMatch(cv,sim){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,h=w*PH/(PW+2*M);
+  if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  cv.style.height=h+'px';
+  const ctx=cv.getContext('2d'),sc=cv.width/(PW+2*M);
+  ctx.setTransform(sc,0,0,sc,M*sc,0);
+  ctx.fillStyle='#2e7d32';ctx.fillRect(-M,0,PW+2*M,PH);
+  for(let i=0;i<10;i++){ctx.fillStyle=i%2?'#2f8433':'#2a7a2e';ctx.fillRect(i*PW/10,0,PW/10,PH);}
+  ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=0.35;
+  ctx.strokeRect(0,0,PW,PH);
+  ctx.beginPath();ctx.moveTo(PW/2,0);ctx.lineTo(PW/2,PH);ctx.stroke();
+  ctx.beginPath();ctx.arc(PW/2,PH/2,9.15,0,Math.PI*2);ctx.stroke();
+  ctx.strokeRect(0,PH/2-20.15,16.5,40.3);ctx.strokeRect(PW-16.5,PH/2-20.15,16.5,40.3);
+  ctx.strokeRect(0,PH/2-9.16,5.5,18.32);ctx.strokeRect(PW-5.5,PH/2-9.16,5.5,18.32);
+  ctx.fillStyle='rgba(255,255,255,.25)';ctx.fillRect(-2,PH/2-3.66,2,7.32);ctx.fillRect(PW,PH/2-3.66,2,7.32);
+  ctx.strokeRect(-2,PH/2-3.66,2,7.32);ctx.strokeRect(PW,PH/2-3.66,2,7.32);
+  const cur=sim.cur&&(sim.mode==='goalseq'||sim.mode==='celebrate')?sim.cur.scorer:null;
+  const all=sim.all().slice().sort((p,q)=>p.y-q.y);
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const p of all){
+    const col=p.pos==='GK'?'#facc15':TEAM_HEX[sim.teamIdx[p.team]];
+    ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(p.x+0.4,p.y+1.5,1.7,0.8,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(p.x,p.y,1.9,0,Math.PI*2);ctx.fill();
+    ctx.lineWidth=p===sim.holder||p===cur?0.55:0.3;ctx.strokeStyle=p===sim.holder||p===cur?'#fde047':'#fff';ctx.stroke();
+    ctx.fillStyle=p.pos==='GK'?'#1c1917':'#fff';ctx.font='bold 2.2px system-ui,sans-serif';ctx.fillText(p.no,p.x,p.y+0.1);
+  }
+  const lab=sim.holder||cur;
+  if(lab){
+    const n=lab.p.name,tw=n.length*1.15+2;
+    ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(lab.x-tw/2,lab.y-6,tw,3);
+    ctx.fillStyle='#fff';ctx.font='bold 2px system-ui,sans-serif';ctx.fillText(n,lab.x,lab.y-4.45);
+  }
+  const bl=sim.ball;
+  ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(bl.x+0.3,bl.y+0.9,0.9,0.4,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.strokeStyle='#111';ctx.lineWidth=0.25;ctx.beginPath();ctx.arc(bl.x,bl.y,0.85,0,Math.PI*2);ctx.fill();ctx.stroke();
+  if(sim.banner){
+    const bn=sim.banner;
+    ctx.fillStyle=bn.ti!==undefined?TEAM_HEX[sim.teamIdx[bn.ti]]:'rgba(0,0,0,.7)';ctx.globalAlpha=0.88;
+    ctx.fillRect(-M,PH/2-10,PW+2*M,20);ctx.globalAlpha=1;
+    ctx.fillStyle='#fff';ctx.font='bold 8px system-ui,sans-serif';ctx.fillText(bn.text,PW/2,PH/2-(bn.sub2?4.5:bn.sub?2.5:0));
+    if(bn.sub){ctx.font='bold 3.6px system-ui,sans-serif';ctx.fillText(bn.sub,PW/2,PH/2+(bn.sub2?1.8:5));}
+    if(bn.sub2){ctx.font='bold 3px system-ui,sans-serif';ctx.fillText(bn.sub2,PW/2,PH/2+6.2);}
+  }
+}
+function lineupHTML(sim,idx){
+  return sim.teams.map((T,t)=>`<div><b style="color:${COL[idx[t]]}">${esc(A.managers[idx[t]].name)}</b> <span class="muted">${lineupOf(idx[t]).label}</span>`+
+    T.map(x=>`<div class="l"><span class="num" style="background:${x.pos==='GK'?'#ca8a04':TEAM_HEX[idx[t]]}">${x.no}</span>${esc(x.p.name)} ${rolePill(x.pos)}${x.nat!==x.pos?` <span title="Doğal mevkisi ${POS_TR[x.nat]}" style="color:var(--warn)">⚠</span>`:''}</div>`).join('')+'</div>').join('');
+}
+function setSpeed(v){if(L.sim)L.sim.speed=v;document.querySelectorAll('.spd button[data-s]').forEach(b=>b.classList.toggle('on',+b.dataset.s===v));}
+function playMatch2D(h,a,res,k,total){
+  return new Promise(resolve=>{
+    if(L.skip)return resolve();
+    const sim=new MatchSim(lineupOf(h).slots,lineupOf(a).slots,res);sim.teamIdx=[h,a];L.sim=sim;
+    const nm=i=>esc(A.managers[i].name);
+    $('live').innerHTML=`<div class="card live"><div class="muted" style="text-align:center">Hafta ${L.week+1} · ${k+1}/${total}. maç</div>
+      <div class="hud"><span style="color:${COL[h]}">${nm(h)}</span><span class="sc" id="hs">0 – 0</span><span style="color:${COL[a]}">${nm(a)}</span></div>
+      <div class="muted" style="text-align:center" id="clk">0'</div>
+      <canvas id="pitch"></canvas><div id="evlog" class="note"></div>
+      <div class="row spd" style="margin-top:8px;justify-content:center">
+        <button data-s="1" class="on" onclick="setSpeed(1)">1×</button><button data-s="2" onclick="setSpeed(2)">2×</button><button data-s="4" onclick="setSpeed(4)">4×</button>
+        <button onclick="L.sim.skipFlag=true">Maçı atla ⏭</button><button onclick="L.skip=true">Haftayı atla ⏩</button></div>
+      <details style="margin-top:8px"><summary>Kadrolar</summary><div class="lineup">${lineupHTML(sim,[h,a])}</div></details></div>`;
+    const cv=$('pitch');let last=performance.now(),lastLog=-1;
+    function frame(now){
+      const dt=Math.min(0.05,(now-last)/1000);last=now;
+      if(L.skip||sim.skipFlag)sim.skipToEnd();else sim.update(dt);
+      const hs=$('hs');if(!hs){resolve();return;}
+      hs.textContent=sim.score[0]+' – '+sim.score[1];
+      $('clk').textContent=Math.min(90,Math.floor(sim.clock))+"'";
+      if(sim.log.length!==lastLog){lastLog=sim.log.length;
+        $('evlog').innerHTML=sim.log.map(e=>`${e.min}' ⚽ <b>${esc(e.name)}</b>${e.kind==='pen'?' <span class="muted">(pen.)</span>':e.kind==='long'?' <span class="muted">(uzaktan)</span>':''}${e.assist?` <span class="muted">(asist ${esc(e.assist)})</span>`:''} <span style="color:${COL[sim.teamIdx[e.ti]]}">●</span>`).join(' &nbsp; ');}
+      drawMatch(cv,sim);
+      if(sim.done)resolve();else requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+}
+async function playWeek(){
+  if(L.busy||L.week>=L.rounds.length)return;
+  L.busy=true;L.skip=false;render();
+  const round=L.rounds[L.week];
+  for(let k=0;k<round.length;k++){
+    const [h,a]=round[k],res=simulateMatch(lineupOf(h).slots,lineupOf(a).slots);
+    await playMatch2D(h,a,res,k,round.length);
+    record(h,a,res);
+  }
+  L.week++;L.busy=false;L.sim=null;render();
+}
+function simAll(){
+  if(L.busy)return;
+  while(L.week<L.rounds.length){for(const [h,a] of L.rounds[L.week])record(h,a,simulateMatch(lineupOf(h).slots,lineupOf(a).slots));L.week++;}
+  render();
+}
+function leagueHTML(){
+  const nm=i=>esc(A.managers[i].name),sorted=sortTable(L.table),finished=L.week>=L.rounds.length;
+  let champ='';
+  if(finished){
+    const w=sorted[0];
+    champ=`<div class="card champ"><div class="muted">🏆 ŞAMPİYON</div><div class="big" style="color:${COL[w.i]}">${nm(w.i)}</div>
+      <div class="muted">${w.pts} puan · ${w.w}G ${w.d}B ${w.l}M · averaj ${w.gf-w.ga>0?'+':''}${w.gf-w.ga}</div></div>`;
+  }
+  const rows=sorted.map((r,k)=>`<tr class="${k===0&&finished?'first':''}"><td>${k+1}</td><td><span style="color:${COL[r.i]}">●</span> ${nm(r.i)}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gf-r.ga}</td><td><b>${r.pts}</b></td></tr>`).join('');
+  const topN=A.managers.length>8?10:5;
+  const scorers=Object.values(L.scorers).sort((a,b)=>b.goals-a.goals||a.p.id-b.p.id).slice(0,topN);
+  const assisters=Object.values(L.assisters).sort((a,b)=>b.assists-a.assists||a.p.id-b.p.id).slice(0,topN);
+  const weeks=L.rounds.map((rd,w)=>{
+    const done=L.results[w];
+    const body=rd.map(([h,a],k)=>{const r=done&&done[k];
+      return `<div class="match"><span>${nm(h)}</span><b>${r?r.hg+' – '+r.ag:'vs'}</b><span style="text-align:right">${nm(a)}</span></div>`+
+        (r&&r.events.length?`<div class="note" style="padding:2px 0 6px">${r.events.map(e=>`${e.min}' ${esc(e.player.name)}${e.kind==='pen'?' <span class="muted">(pen.)</span>':e.kind==='long'?' <span class="muted">(uzak)</span>':''}${e.assist?' <span class="muted">(asist '+esc(e.assist.name)+')</span>':''}`).join(' · ')}</div>`:'');}).join('');
+    const open=(w===L.week&&!finished)||(w===L.week-1)||(finished&&w===L.rounds.length-1);
+    return `<details ${open?'open':''} style="margin-bottom:6px;${done?'':'opacity:.75'}"><summary>Hafta ${w+1}${done?' ✓':''}</summary>${body}</details>`;}).join('');
+  return `<h1>🏟️ Lig</h1><p class="sub">${finished?'Sezon tamamlandı':'Hafta '+(L.week+1)+' / '+L.rounds.length}</p>${champ}
+  <div id="live" class="live"></div>
+  <div class="row" style="margin-bottom:14px">
+    <button class="primary" ${L.busy||finished?'disabled':''} onclick="playWeek()">▶ Haftayı oynat</button>
+    <button ${L.busy||finished?'disabled':''} onclick="simAll()">⏩ Tüm sezonu simüle et</button>
+    <button ${L.busy?'disabled':''} onclick="newGame()">Yeni oyun</button></div>
+  <div class="card scroll"><h2>Puan durumu</h2><table><tr><th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>A</th><th>Y</th><th>Av</th><th>P</th></tr>${rows}</table></div>
+  ${scorers.length?`<div class="card"><h2>⚽ Gol krallığı</h2>${scorers.map((s,k)=>`<div class="match"><span>${k+1}. ${esc(s.p.name)} <span class="muted">(${nm(s.team)})</span></span><b>${s.goals}</b></div>`).join('')}</div>`:''}
+  ${assisters.length?`<div class="card"><h2>🎯 Asist krallığı</h2>${assisters.map((s,k)=>`<div class="match"><span>${k+1}. ${esc(s.p.name)} <span class="muted">(${nm(s.team)})</span></span><b>${s.assists}</b></div>`).join('')}</div>`:''}
+  <div class="card"><h2>Fikstür</h2>${weeks}</div>`;
+}
+function newGame(){if(confirm('Yeni oyun başlasın mı?')){clearTimeout(botTimer);screen='setup';A=null;L=null;render();}}
+render();
+</script>
+</body>
+</html>
