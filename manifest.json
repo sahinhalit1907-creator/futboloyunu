@@ -1,15 +1,18 @@
 {
-  "name": "Oyunun Adı",
-  "short_name": "Oyun",
-  "start_url": "./index.html",
+  "name": "Transfer Savaşı",
+  "short_name": "Transfer Savaşı",
+  "start_url": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#f3f6f4",
+  "theme_color": "#16a34a",
+  "description": "Transfer Savaşı - Futbolcu Açık Artırma Ligi",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
