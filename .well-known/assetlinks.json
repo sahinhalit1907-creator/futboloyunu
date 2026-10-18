@@ -1,1 +1,14 @@
-
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.transferwar",
+      "sha256_cert_fingerprints": [
+        "8D:36:ED:B0:FC:B0:2B:B7:0F:CA:AF:CE:03:C6:4F:1F:D7:46:44:3C:2C:3D:BB:8B:38:B4:7C:C3:83:68:47:0E"
+      ]
+    }
+  }
+]
