@@ -147,6 +147,7 @@ html,body{overscroll-behavior-y:none}
 <div id="app"></div>
 <div id="tmodal" class="modal" hidden></div>
 <div id="pmodal" class="modal" hidden></div>
+<div id="swmodal" class="modal" hidden></div>
 <div id="fmmodal" class="modal" hidden></div>
 <div id="omodal" class="modal" hidden onclick="if(event.target===this)closeOnline()"></div>
 <script>
@@ -987,13 +988,19 @@ Les Ferdinand|ST|ENG|84
 Nuno Gomes|ST|POR|84
 Nihat Kahveci|ST|TUR|83
 Arif Erdem|ST|TUR|83
-Emmanuel Adebayor|ST|TOG|83`;
+Emmanuel Adebayor|ST|TOG|83
+Lionel Messi (Prime)|RW|ARG|99
+Cristiano Ronaldo (Prime)|LW|POR|98
+`;
 // Çekirdek aile (ihtiyaç/havuz/kadro mantığı): KL, DEF, OS, FV. Ayrıntılı mevki (dp) oyuncunun gerçek mevkisidir.
 const CORE={GK:'GK',CB:'DEF',LB:'DEF',RB:'DEF',DM:'MID',CM:'MID',AM:'MID',LW:'FWD',RW:'FWD',SS:'FWD',ST:'FWD'};
 const PLAYERS=RAW.trim().split('\n').map((l,i)=>{const [name,dp,ctry,ovr]=l.split('|');return {id:i,name,dp,pos:CORE[dp],ctry,ovr:+ovr};});
 RAW_CL.trim().split('\n').forEach(l=>{const [name,dp,ctry,ovr]=l.split('|');PLAYERS.push({id:PLAYERS.length,name,dp,pos:CORE[dp],ctry,ovr:+ovr,cl:true});});
+// 🔁 Takas Kartı: açık artırmada tek seferlik kart (oyuncu değildir; havuza girmez)
+const SWAP_ID=PLAYERS.length;PLAYERS.push({id:SWAP_ID,name:'Takas Kartı',dp:'ST',pos:'FWD',ctry:'',ovr:0,card:true});
+const CARD_PRICE=10;
 // Oyuncu havuzu: 'now' güncel yıldızlar (varsayılan), 'classic' yalnızca efsaneler, 'mix' hepsi
-const eraOK=(c,p)=>c&&c.era==='classic'?!!p.cl:c&&c.era==='mix'?true:!p.cl;
+const eraOK=(c,p)=>p.card?false:c&&c.era==='classic'?!!p.cl:c&&c.era==='mix'?true:!p.cl;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 function shuffle(a,rng=Math.random){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 // Mevki uyumu: fitOf(oyuncu, mevki) -> performans çarpanı (mevkiler arası mesafeye göre)
@@ -1186,7 +1193,9 @@ function applyResult(table,h,a,hg,ag){
 function sortTable(t){return t.slice().sort((x,y)=>y.pts-x.pts||(y.gf-y.ga)-(x.gf-x.ga)||y.gf-x.gf||x.i-y.i);}
 
 // ---- Açık artırma motoru ----
-function maxBid(A,i){const m=A.managers[i],left=A.cfg.squad-m.squad.length;return left<=0?0:m.budget-(left-1);}
+function maxBid(A,i){const m=A.managers[i],left=A.cfg.squad-m.squad.length;
+  if(A.lot&&A.lot.card)return Math.max(0,m.budget-Math.max(0,left)); // takas kartı kadro yeri tutmaz; kalan yerler için 1'er TL ayrılır
+  return left<=0?0:m.budget-(left-1);}
 function makeManagers(cfg,rng){
   const BOT_NAMES=['Robo Hoca','Kaptan Bot','Mister Metal','Algoritma Hoca','Çelik Teknik','Taktik Makinesi','Hesap Hoca','Pres Bot','Kontra Bot','Libero Bot','Golcü Bot','Kanat Bot','Maestro Bot','Pivot Bot','Savaş Bot','Şampiyon Bot'];
   return cfg.names.slice(0,cfg.n).map((nm,i)=>{
@@ -1217,6 +1226,8 @@ function buildPool(cfg,rng,managers){
 }
 function newAuction(cfg,rng=Math.random){
   const managers=makeManagers(cfg,rng),queue=buildPool(cfg,rng,managers);
+  // 🔁 Takas kartı (isteğe bağlı): insanlı açık artırmada oyun başına bir tane, oyunun orta kısmında bir yerde
+  if(cfg.swap&&managers.some(m=>!m.bot))queue.splice(Math.floor(Math.min(queue.length,cfg.n*cfg.squad)*(0.25+rng()*0.4)),0,SWAP_ID); // oyun en az n×kadro lot sürer: kart mutlaka çıkar
   const A={mode:'auction',cfg,managers,queue,discarded:[],lot:null,lotNo:0,last:null,done:false,total:queue.length,rng};
   startLot(A);return A;
 }
@@ -1286,7 +1297,7 @@ function draftAdvance(D){
 }
 const MYST_MIN=85; // sürpriz kartlardan çıkabilecek en düşük puan
 function startLot(A){
-  if(A.managers.every(m=>m.squad.length>=A.cfg.squad)){A.done=true;A.lot=null;return;}
+  if(A.managers.every(m=>m.squad.length>=A.cfg.squad)){A.done=true;A.lot=null;swapFinish(A);return;}
   if(!A.queue.length){fillRemaining(A);return;}
   const n=A.managers.length;
   const active=A.managers.map((m,i)=>i).filter(i=>maxBid(A,i)>=1);
@@ -1298,6 +1309,11 @@ function startLot(A){
   }
   if(!myst)pid=A.queue.shift();
   A.lotNo++;
+  if(pid===SWAP_ID){ // 🔁 Takas Kartı: sıradaki sabit fiyata alabilir, almazsa 10 TL üzerinden açık artırma
+    A.lastMyst=false;A.lot={pid,bid:0,leader:-1,active:[],turn:-1,mystery:false,offer:true,card:true};
+    A.lot.active=A.managers.map((m,i)=>i).filter(i=>maxBid(A,i)>=CARD_PRICE);
+    settle(A,(((A.lotNo-2)%n)+n)%n);return;
+  }
   A.lastMyst=myst;
   A.lot={pid,bid:0,leader:-1,active,turn:-1,mystery:myst,offer:myst};
   settle(A,(((A.lotNo-2)%n)+n)%n);
@@ -1306,11 +1322,13 @@ function settle(A,from){
   const lot=A.lot,n=A.managers.length;
   lot.active=lot.active.filter(i=>i===lot.leader||maxBid(A,i)>lot.bid);
   if(lot.leader>=0&&lot.active.length===1){
-    const m=A.managers[lot.leader];m.squad.push(lot.pid);m.budget-=lot.bid;
-    A.last={pid:lot.pid,who:lot.leader,price:lot.bid,sold:true};A.lot=null;startLot(A);return;
+    const m=A.managers[lot.leader];
+    if(lot.card){m.budget-=lot.bid;A.swap={holder:lot.leader,used:false};A.last={pid:lot.pid,who:lot.leader,price:lot.bid,sold:true,card:true};}
+    else{m.squad.push(lot.pid);m.budget-=lot.bid;A.last={pid:lot.pid,who:lot.leader,price:lot.bid,sold:true};}
+    A.lot=null;startLot(A);return;
   }
   if(lot.leader<0&&lot.active.length===0){
-    A.discarded.push(lot.pid);A.last={pid:lot.pid,sold:false};A.lot=null;startLot(A);return;
+    if(!lot.card)A.discarded.push(lot.pid);A.last={pid:lot.pid,sold:false,card:!!lot.card};A.lot=null;startLot(A);return;
   }
   for(let k=1;k<=n;k++){const i=(from+k)%n;if(lot.active.includes(i)&&i!==lot.leader){lot.turn=i;return;}}
 }
@@ -1325,20 +1343,23 @@ function passTurn(A){
 }
 // Sürpriz kartı sıradaki oyuncu 1 TL'ye alır
 function takeMystery(A){
-  const lot=A.lot;if(!lot||!lot.mystery||!lot.offer)return false;
-  const t=lot.turn;if(maxBid(A,t)<1)return false;
-  const m=A.managers[t];m.squad.push(lot.pid);m.budget-=1;
-  A.last={pid:lot.pid,who:t,price:1,sold:true,mystery:true};A.lot=null;startLot(A);return true;
+  const lot=A.lot;if(!lot||!lot.offer||!(lot.mystery||lot.card))return false;
+  const t=lot.turn,price=lot.card?CARD_PRICE:1;if(maxBid(A,t)<price)return false;
+  const m=A.managers[t];m.budget-=price;
+  if(lot.card){A.swap={holder:t,used:false};A.last={pid:lot.pid,who:t,price,sold:true,card:true};}
+  else{m.squad.push(lot.pid);A.last={pid:lot.pid,who:t,price:1,sold:true,mystery:true};}
+  A.lot=null;startLot(A);return true;
 }
 // Sıradaki oyuncu istemez: futbolcu gizli kalarak açık artırmaya çıkar, o oyuncu bu lot için turdan çıkar
 function declineMystery(A){
-  const lot=A.lot;if(!lot||!lot.mystery||!lot.offer)return false;
-  const t=lot.turn;lot.offer=false;lot.active=lot.active.filter(i=>i!==t);settle(A,t);return true;
+  const lot=A.lot;if(!lot||!lot.offer||!(lot.mystery||lot.card))return false;
+  const t=lot.turn;lot.offer=false;if(lot.card)lot.bid=CARD_PRICE;   // kart: açık artırma 10 TL'nin üzerinden başlar
+  lot.active=lot.active.filter(i=>i!==t);settle(A,t);return true;
 }
 function fillRemaining(A){
-  const pool=shuffle([...A.queue,...A.discarded],A.rng);A.queue=[];A.filled=[];
+  const pool=shuffle([...A.queue,...A.discarded].filter(id=>id!==SWAP_ID),A.rng);A.queue=[];A.filled=[];
   A.managers.forEach((m,i)=>{while(m.squad.length<A.cfg.squad&&pool.length){const pid=pool.pop();m.squad.push(pid);A.filled.push({pid,who:i});}});
-  A.done=true;A.lot=null;
+  A.done=true;A.lot=null;swapFinish(A);
 }
 // ---- Bot mantığı ----
 // Bir yöneticinin hâlâ doldurması gereken mevki sayıları (hedef diziliş: 1 KL + BASE_FORM)
@@ -1404,9 +1425,33 @@ function botValueMystery(A,i){
   return Math.max(1,Math.round(v));
 }
 // Dönen değer: verilecek teklif (lot.bid'den büyük) ya da 0 = pas
+// ---- 🔁 Takas: yalnızca orijinal mevkisi (dp) aynı olan oyuncular arasında ----
+function swapOptions(A,h){
+  const out=[];A.managers[h].squad.forEach(mid=>{const dp=PLAYERS[mid].dp;A.managers.forEach((m,j)=>{if(j===h)return;m.squad.forEach(qid=>{if(PLAYERS[qid].dp===dp)out.push({mine:mid,opp:j,theirs:qid});});});});
+  return out;
+}
+function swapCanUse(A,h){return !!(A&&A.mode==='auction'&&A.swap&&!A.swap.used&&A.swap.holder===h&&A.done);}
+function doSwap(A,h,mid,j,qid){
+  if(!swapCanUse(A,h)||j===h||!A.managers[j])return false;
+  const a=A.managers[h],b=A.managers[j],ia=a.squad.indexOf(mid),ib=b.squad.indexOf(qid);
+  if(ia<0||ib<0||PLAYERS[mid].dp!==PLAYERS[qid].dp)return false;
+  a.squad[ia]=qid;b.squad[ib]=mid;
+  const fix=(m,from,to)=>{if(m.tactic&&Array.isArray(m.tactic.order))m.tactic.order=m.tactic.order.map(id=>id===from?to:id);delete m.lineup;};
+  fix(a,mid,qid);fix(b,qid,mid);
+  A.swap.used=true;A.swap.log={h,mine:mid,j,theirs:qid};return true;
+}
+// Botun kartı: en az +2 puan kazandıran takası otomatik yapar, yoksa kullanmaz
+function botUseSwap(A){
+  const s=A.swap;if(!s||s.used||!A.managers[s.holder].bot)return;
+  let best=null,bg=1;for(const o of swapOptions(A,s.holder)){const g=PLAYERS[o.theirs].ovr-PLAYERS[o.mine].ovr;if(g>bg){bg=g;best=o;}}
+  if(best)doSwap(A,s.holder,best.mine,best.opp,best.theirs);else s.used=true;
+}
+function swapFinish(A){if(A.swap&&!A.swap.used)botUseSwap(A);}
+function botWantsCard(A,i){return maxBid(A,i)>=CARD_PRICE+4&&A.rng()<0.55*A.managers[i].aggr;}
+function botValueCard(A,i){const mb=maxBid(A,i);return mb<=CARD_PRICE+1?0:Math.min(mb,Math.round(CARD_PRICE+1+A.rng()*5*A.managers[i].aggr));}
 function botDecide(A,i){
   const lot=A.lot;if(!lot.vals)lot.vals={};
-  if(lot.vals[i]===undefined)lot.vals[i]=lot.mystery?botValueMystery(A,i):botValue(A,i,PLAYERS[lot.pid]);
+  if(lot.vals[i]===undefined)lot.vals[i]=lot.card?botValueCard(A,i):lot.mystery?botValueMystery(A,i):botValue(A,i,PLAYERS[lot.pid]);
   const cap=Math.min(lot.vals[i],maxBid(A,i));
   if(cap<=lot.bid)return 0;
   const gap=cap-lot.bid;let inc=1;
@@ -1749,7 +1794,7 @@ const POS_TR={GK:'KL',CB:'STP',LB:'SLB',RB:'SĞB',DM:'DOS',CM:'MOS',AM:'OOS',LW:
 const POS_FULL={GK:'Kaleci',CB:'Stoper',LB:'Sol bek',RB:'Sağ bek',DM:'Defansif orta saha',CM:'Merkez orta saha',AM:'Ofansif orta saha',LW:'Sol açık',RW:'Sağ açık',SS:'Gizli forvet',ST:'Santrfor'};
 const POS_ORDER={GK:0,DEF:1,MID:2,FWD:3};
 const P=id=>PLAYERS[id];
-let cfg={n:4,names:Array(16).fill(''),bots:Array(16).fill(false),squad:4,budget:20,double:true,mystery:true,mode:'auction',passMult:2,premium:2,era:'now'};
+let cfg={n:4,names:Array(16).fill(''),bots:Array(16).fill(false),squad:4,budget:20,double:true,mystery:true,mode:'auction',passMult:2,premium:2,era:'now',swap:false};
 let botTimer=null;
 let screen='setup',A=null,L=null;
 
@@ -1808,7 +1853,7 @@ function setupHTML(){
   </div>
   <div class="card"><h2>Oyuncu havuzu</h2>
     <div class="row seg"><button class="${cfg.era==='now'?'on':''}" onclick="setEra('now')">⚽ Güncel yıldızlar</button><button class="${cfg.era==='classic'?'on':''}" onclick="setEra('classic')">🏆 Klasik oyuncular</button><button class="${cfg.era==='mix'?'on':''}" onclick="setEra('mix')">🔀 Karışık</button></div>
-    <p class="note" style="margin-top:8px">${cfg.era==='classic'?'<b>Yalnızca efsaneler</b> gelir: Pelé, Maradona, Cruyff, Beckenbauer, Zidane, Ronaldo Nazário, Ronaldinho, Roberto Carlos, Dida, Maldini ve daha fazlası ('+PLAYERS.filter(p=>p.cl).length+' oyuncu, puanlar kariyer zirvesine göre).':cfg.era==='mix'?'Güncel yıldızlar ve efsaneler <b>birlikte</b> havuza girer ('+PLAYERS.length+' oyuncu). Efsaneler genelde daha yüksek puanlıdır.':'Bugünün yıldızları ('+PLAYERS.filter(p=>!p.cl).length+' oyuncu, Süper Lig takımları dahil).'}</p>
+    <p class="note" style="margin-top:8px">${cfg.era==='classic'?'<b>Yalnızca efsaneler</b> gelir: Pelé, Maradona, Cruyff, Beckenbauer, Zidane, Ronaldo Nazário, Ronaldinho, Roberto Carlos, Dida, Maldini ve daha fazlası ('+PLAYERS.filter(p=>p.cl).length+' oyuncu, puanlar kariyer zirvesine göre).':cfg.era==='mix'?'Güncel yıldızlar ve efsaneler <b>birlikte</b> havuza girer ('+PLAYERS.filter(p=>!p.card).length+' oyuncu). Efsaneler genelde daha yüksek puanlıdır.':'Bugünün yıldızları ('+PLAYERS.filter(p=>!p.cl&&!p.card).length+' oyuncu, Süper Lig takımları dahil).'}</p>
   </div>
   <div class="card"><h2>Kadro kurma yöntemi</h2>
     <div class="row seg"><button class="${cfg.mode==='auction'?'on':''}" onclick="setMode('auction')">🔨 Açık artırma</button><button class="${cfg.mode==='draft'?'on':''}" onclick="setMode('draft')">🃏 Hızlı seçim</button></div>
@@ -1826,7 +1871,8 @@ function setupHTML(){
     <input type="range" id="bg" min="10" max="100" value="${cfg.budget}" oninput="setBudget(+this.value)">
     <p class="note">Her kadro yeri için en az 1 TL gerekir; bu yüzden bütçe kadro sayısından az olamaz.</p>`:''}
     <label><input type="checkbox" ${cfg.double?'checked':''} onchange="cfg.double=this.checked"> Çift devreli lig (iç saha / deplasman)</label>
-    ${cfg.mode==='auction'?`<label><input type="checkbox" ${cfg.mystery?'checked':''} onchange="cfg.mystery=this.checked"> 🎁 Sürpriz yıldız kartları (arada bir, 85+ puanlı)</label>`:''}
+    ${cfg.mode==='auction'?`<label><input type="checkbox" ${cfg.mystery?'checked':''} onchange="cfg.mystery=this.checked"> 🎁 Sürpriz yıldız kartları (arada bir, 85+ puanlı)</label>
+    <label><input type="checkbox" ${cfg.swap?'checked':''} onchange="cfg.swap=this.checked"> 🔁 Takas kartı <span class="muted">(oyun başına bir tane; sırası gelen 10 TL'ye alabilir, almazsa açık artırılır. Kart sahibi, açık artırma bitince aynı mevkideki oyuncusunu bir rakiple takas eder. Yalnızca insanlı oyunlarda)</span></label>`:''}
   </div>
   <button class="primary" style="width:100%;font-size:1.1rem" onclick="startFlow()">${cfg.mode==='auction'?'Açık artırmayı başlat':'Hızlı seçimi başlat'}</button>
   <button style="width:100%;margin-top:8px;font-size:1.05rem" onclick="openOnline()">🌐 Online oyna (arkadaşlarla)${((ONL.hosted&&ONL.hosted.length)||p2pHostedList().length)?' · devam eden oyun var':''}</button>
@@ -1859,7 +1905,7 @@ function scheduleBot(){
   botTimer=setTimeout(()=>{
     if(A!==ref||screen!=='auction'||!A.lot||A.lot.turn!==t)return;
     const lot=A.lot;
-    if(lot.mystery&&lot.offer){if(botWantsMystery(A,t)&&takeMystery(A)){}else declineMystery(A);afterAuction();return;}
+    if(lot.offer){const want=lot.card?botWantsCard(A,t):botWantsMystery(A,t);if(want&&takeMystery(A)){}else declineMystery(A);afterAuction();return;}
     const d=botDecide(A,t);
     if(d>lot.bid&&placeBid(A,d)){}else passTurn(A);
     afterAuction();
@@ -1932,19 +1978,25 @@ function mpTip(el){const c=$('mpcap');if(c)c.textContent=el.getAttribute('data-t
 function auctionHTML(){
   const lot=A.lot,p=P(lot.pid),t=lot.turn,m=A.managers[t],mx=maxBid(A,t),min=lot.bid+1,mine=!m.bot&&canAct(t);
   let last='';
-  if(A.last){const lp=P(A.last.pid);last=A.last.sold?`<div class="cmpb">${A.last.mystery?'🎁 ':'✅ '}${posPill(lp)} ${esc(lp.name)} <b>${lp.ovr}</b> → <b>${esc(A.managers[A.last.who].name)}</b> (${A.last.price} TL)</div>`:`<div class="cmpb no">❌ ${esc(lp.name)} satılmadı</div>`;}
+  if(A.last&&A.last.card){last=A.last.sold?`<div class="cmpb">🔁 Takas Kartı → <b>${esc(A.managers[A.last.who].name)}</b> (${A.last.price} TL)</div>`:`<div class="cmpb no">❌ Takas Kartı kimseye gitmedi</div>`;}
+  else if(A.last){const lp=P(A.last.pid);last=A.last.sold?`<div class="cmpb">${A.last.mystery?'🎁 ':'✅ '}${posPill(lp)} ${esc(lp.name)} <b>${lp.ovr}</b> → <b>${esc(A.managers[A.last.who].name)}</b> (${A.last.price} TL)</div>`:`<div class="cmpb no">❌ ${esc(lp.name)} satılmadı</div>`;}
   const quick=[1,2,5,10].map(k=>`<button ${lot.bid+k>mx?'disabled':''} onclick="bidNow(${lot.bid+k})">+${k}<small style="display:block;font-weight:500;opacity:.8">${lot.bid+k} TL</small></button>`).join('');
   const mgrs=A.managers.map((mm,i)=>{
     const st=lot.active.includes(i)?(i===lot.leader?'👑 önde':(i===t?'🎯 sırada':'turda')):'pas';
-    return `<div class="card mgr ${i===t?'turn':''}" style="border-left-color:${COL[i]};margin:0"><b>${esc(mm.name)}</b> <span class="pill">${st}</span>
+    return `<div class="card mgr ${i===t?'turn':''}" style="border-left-color:${COL[i]};margin:0"><b>${esc(mm.name)}</b>${A.swap&&A.swap.holder===i&&!A.swap.used?' 🔁':''} <span class="pill">${st}</span>
       <small>Bütçe: <b>${mm.budget} TL</b> · Kadro ${mm.squad.length}/${A.cfg.squad}</small>
       <div class="chips">${mm.squad.map(id=>chip(P(id))).join('')}</div></div>`;}).join('');
   const lead=lot.leader>=0?'Önde: <b>'+esc(A.managers[lot.leader].name)+'</b>':'Henüz teklif yok';
-  const lotC=lot.mystery?`<div class="card lotc" style="border-color:var(--gold)"><span class="pill" style="background:var(--gold);color:#422006;align-self:flex-start">🎁 SÜRPRİZ KART</span><div class="nm">❓ Gizli yıldız</div>
+  const lotC=lot.card?`<div class="card lotc" style="border-color:#7c3aed"><span class="pill" style="background:#7c3aed;color:#fff;align-self:flex-start">🔁 TAKAS KARTI</span><div class="nm">Takas Kartı</div>
+      <div class="r1"><span class="ovr" style="background:#7c3aed">🔁</span><div><div class="mu">${lot.offer?'Kart fiyatı':'Güncel teklif'}</div><div class="bid">${lot.offer?CARD_PRICE:lot.bid} TL</div></div></div><div class="mu">Açık artırma bitince aynı mevkideki bir oyuncuyu rakiple takas edersin.</div><div class="mu">${lead}</div></div>`:
+    lot.mystery?`<div class="card lotc" style="border-color:var(--gold)"><span class="pill" style="background:var(--gold);color:#422006;align-self:flex-start">🎁 SÜRPRİZ KART</span><div class="nm">❓ Gizli yıldız</div>
       <div class="r1"><span class="ovr" style="background:var(--muted)">85+</span><div><div class="mu">${lot.offer?'Kart fiyatı':'Güncel teklif'}</div><div class="bid">${lot.offer?1:lot.bid} TL</div></div></div><div class="mu">${lead}</div></div>`:
     `<div class="card lotc"><div class="mu">${posPill(p)} ${esc(p.ctry)}</div><div class="nm">${esc(p.name)}</div>
       <div class="r1"><span class="ovr">${p.ovr}</span><div><div class="mu">Güncel teklif</div><div class="bid">${lot.bid} TL</div></div></div><div class="mu">${lead}</div></div>`;
   const ctl=(m.bot||!canAct(t)||ackWait())?waitCardHTML(m,t,lot):
+    lot.card&&lot.offer?`<div class="card cmp" style="border-color:#7c3aed"><div class="h"><b>🔁 ${esc(m.name)}, Takas Kartı!</b><span class="muted">${ONL.on?'sıra sende':'cihazı ver'}</span></div>
+      <p class="note" style="margin:0 0 8px;font-size:.8rem">Oyun başına tek kart. <b>${CARD_PRICE} TL</b>'ye alırsan açık artırma bittikten sonra kendi oyuncunu bir rakibin <b>aynı mevkideki</b> oyuncusuyla değiştirebilirsin. İstemezsen açık artırmaya çıkar; diğerleri ${CARD_PRICE} TL'nin üzerine çıkıp alabilir.</p>
+      <div class="row" style="flex-wrap:nowrap"><button class="primary" style="flex:1" ${maxBid(A,t)<CARD_PRICE?'disabled':''} onclick="doMystery(true)">🔁 ${CARD_PRICE} TL'ye al</button><button style="flex:1" onclick="doMystery(false)">Açık artırmaya çıkar</button></div></div>`:
     lot.mystery&&lot.offer?`<div class="card cmp" style="border-color:var(--gold)"><div class="h"><b>🎁 ${esc(m.name)}, sürpriz kart hakkın var!</b><span class="muted">${ONL.on?'sıra sende':'cihazı ver'}</span></div>
       <p class="note" style="margin:0 0 8px;font-size:.8rem">İçinden <b>85+ puanlı bir yıldız</b> çıkacak; kim olduğunu bilmeden <b>1 TL</b>'ye alabilirsin. İstemezsen açık artırmaya çıkar; bu futbolcu için turdan çıkmış olursun.</p>
       <div class="row" style="flex-wrap:nowrap"><button class="primary" style="flex:1" onclick="doMystery(true)">🎁 1 TL'ye al</button><button style="flex:1" onclick="doMystery(false)">Açık artırmaya çıkar</button></div></div>`:
@@ -2004,6 +2056,40 @@ function bidCustom(){
 function doPass(){if(ONL.on&&ONL.role!=='host'){onlineSend({t:'pass'});return;}passTurn(A);afterAuction();}
 function doMystery(take){if(ONL.on&&ONL.role!=='host'){onlineSend({t:'myst',take:!!take});return;}if(take)takeMystery(A);else declineMystery(A);afterAuction();}
 
+
+// ---- 🔁 Takas Kartı arayüzü ----
+const SW={h:null,mine:null,j:null,q:null};
+function swapPanelHTML(){
+  if(!A||A.mode!=='auction'||!A.swap||L)return '';
+  const sw=A.swap,h=sw.holder,hn=esc(A.managers[h].name);
+  if(sw.used){const g=sw.log;if(!g)return '';const a=PLAYERS[g.mine],b=PLAYERS[g.theirs];
+    return `<div class="banner">🔁 ${hn}, Takas Kartıyla <b>${esc(a.name)}</b> (${a.ovr}) oyuncusunu verip ${esc(A.managers[g.j].name)} takımından <b>${esc(b.name)}</b> (${b.ovr}) oyuncusunu aldı.</div>`;}
+  if(A.managers[h].bot)return '';
+  const can=!ONL.on||ONL.mySeat===h,n=swapOptions(A,h).length;
+  return `<div class="card" style="border-color:#7c3aed"><b>🔁 ${hn}: Takas Kartın var</b><p class="note" style="margin:6px 0">Bir oyuncunu, rakiplerden birinin <b>aynı mevkideki</b> oyuncusuyla değiştirebilirsin. Lig başlamadan kullan; başlayınca kart geçer. Takas karşı tarafın onayı olmadan gerçekleşir.</p>${can?(n?'<button class="primary" onclick="openSwap()">🔁 Takas yap</button>':'<span class="muted">Şu an takas edilebilecek eşleşme yok.</span>'):'<span class="muted">Kart sahibi takasını yapıyor…</span>'}</div>`;
+}
+function openSwap(){const h=ONL.on?ONL.mySeat:(A&&A.swap?A.swap.holder:null);if(h==null||!swapCanUse(A,h))return;Object.assign(SW,{h,mine:null,j:null,q:null});renderSwap();}
+function closeSwap(){const m=$('swmodal');if(m){m.hidden=true;m.innerHTML='';}}
+function renderSwap(){
+  const m=$('swmodal');if(!m)return;const h=SW.h,opts=swapOptions(A,h);m.hidden=false;
+  const mineIds=[...new Set(opts.map(o=>o.mine))].sort((a,b)=>ROLE_ORDER[PLAYERS[a].dp]-ROLE_ORDER[PLAYERS[b].dp]||PLAYERS[b].ovr-PLAYERS[a].ovr);
+  const pr=id=>{const p=PLAYERS[id];return `${posPill(p)} ${esc(p.name)} <b>${p.ovr}</b>`;};
+  const h1=`<div class="muted" style="margin:10px 0 4px">1) Vereceğin oyuncu</div><div class="row" style="gap:6px">${mineIds.map(id=>`<button class="${SW.mine===id?'primary':''}" style="padding:6px 8px;font-size:.82rem" onclick="swapMine(${id})">${pr(id)}</button>`).join('')}</div>`;
+  let h2='';
+  if(SW.mine!=null){const mp=PLAYERS[SW.mine],list=opts.filter(o=>o.mine===SW.mine).sort((a,b)=>PLAYERS[b.theirs].ovr-PLAYERS[a.theirs].ovr);
+    h2=`<div class="muted" style="margin:12px 0 4px">2) Alacağın oyuncu (aynı mevki: ${esc(POS_FULL[mp.dp])})</div>`+list.map(o=>{const q=PLAYERS[o.theirs],d=q.ovr-mp.ovr;
+      return `<button class="${SW.q===o.theirs?'primary':''}" style="display:flex;justify-content:space-between;gap:8px;width:100%;margin-bottom:6px;font-size:.85rem;text-align:left" onclick="swapTheirs(${o.opp},${o.theirs})"><span>${esc(A.managers[o.opp].name)} · ${pr(o.theirs)}</span><span style="color:${SW.q===o.theirs?'inherit':d>0?'var(--accent)':d<0?'var(--danger)':'var(--muted)'};font-weight:700">${d>0?'+':''}${d}</span></button>`;}).join('');}
+  const h3=(SW.mine!=null&&SW.q!=null)?`<div class="banner" style="margin-top:10px">${pr(SW.mine)} ⇄ ${esc(A.managers[SW.j].name)}: ${pr(SW.q)}</div><div class="row" style="flex-wrap:nowrap"><button class="primary" style="flex:1" onclick="swapConfirm()">✅ Takası onayla</button><button style="flex:1" onclick="closeSwap()">Vazgeç</button></div>`:'';
+  m.innerHTML=`<div class="sheet"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2 style="margin:0;font-size:1.1rem">🔁 Takas Kartı</h2><button onclick="closeSwap()">✖ Kapat</button></div><p class="note" style="margin:6px 0 0">Yalnızca orijinal mevkisi aynı olan oyuncular takas edilir. Takas tek seferliktir.</p>${h1}${h2}${h3}</div>`;
+}
+function swapMine(id){SW.mine=id;SW.j=null;SW.q=null;renderSwap();}
+function swapTheirs(j,q){SW.j=j;SW.q=q;renderSwap();}
+function swapConfirm(){
+  const {h,mine,j,q}=SW;if(mine==null||q==null)return;
+  if(ONL.on&&ONL.role!=='host'){onlineSend({t:'swap',m:mine,j,q});closeSwap();return;}   // misafir: host uygular ve yayınlar
+  if(doSwap(A,h,mine,j,q)){closeSwap();if(ONL.on)onlinePublish();render();}
+}
+
 // --- Kadrolar ---
 function teamPlayers(i){return A.managers[i].squad.map(P);}
 function lineupOf(i){
@@ -2023,7 +2109,7 @@ function squadsHTML(){
       <small class="muted">${cfg.mode==='auction'?'Kalan bütçe: '+m.budget+' TL · ':''}Diziliş: <b>${lu.label}</b></small>${bar('Genel',s.ovr)}${bar('Hücum',s.atk)}${bar('Savunma',s.def)}
       <div class="chips">${lu.slots.map(chipE).join('')}</div>
       ${(m.bot||(ONL.on&&i!==ONL.mySeat))?'':`<button style="margin-top:10px;width:100%" onclick="openTactics(${i})">⚙️ Taktik: formasyon ve oyuncu yerleri</button>`}</div>`;}).join('');
-  return `<h1>📋 Kadrolar hazır</h1><p class="sub">Diziliş otomatik kurulur; insan takımlar ⚙️ Taktik ile formasyonu ve oyuncu yerlerini değiştirebilir. ⚠ işareti, oyuncunun doğal mevkisi dışında oynatıldığını gösterir (performansı düşer).</p>${note}<div class="grid">${cards}</div>
+  return `<h1>📋 Kadrolar hazır</h1><p class="sub">Diziliş otomatik kurulur; insan takımlar ⚙️ Taktik ile formasyonu ve oyuncu yerlerini değiştirebilir. ⚠ işareti, oyuncunun doğal mevkisi dışında oynatıldığını gösterir (performansı düşer).</p>${swapPanelHTML()}${note}<div class="grid">${cards}</div>
   ${ONL.on&&ONL.role!=='host'?'<p class="note" style="margin-top:14px;text-align:center">⏳ Host ligi başlatacak. Bu arada ⚙️ Taktik ile dizilişini ayarlayabilirsin.</p>':`<button class="primary" style="width:100%;font-size:1.1rem;margin-top:14px" onclick="startLeague()">Fikstürü oluştur ve lige başla</button>`}`;
 }
 
@@ -2269,7 +2355,7 @@ function newGame(){if(confirm('Yeni oyun başlasın mı?')){clearTimeout(botTime
 // ================= 🌐 ONLINE (çok oyunculu) =================
 // Mimari: sayfanın SAHİBİ (host) oyunun tek doğru kaynağıdır. Durumu `db`'ye yazar; misafirler onu canlı okur.
 // Misafirler hamlelerini `room` presence kanalıyla host'a iletir (yazma yetkisi gerekmez).
-const BUILD='2026-10-14 · v23';
+const BUILD='2026-10-19 · v24';
 const IN_CLAUDE=()=>typeof window!=='undefined'&&!!(window.claude&&window.claude.use);
 const KIND=['normal','long','pen'];
 const ONL={on:false,role:null,code:null,name:'',phase:null,seats:[],mySeat:-1,myKey:null,nick:'',
@@ -2318,7 +2404,7 @@ async function loadHosted(){
 function onlineSummary(){
   const hum=cfg.bots.slice(0,cfg.n).filter((b,i)=>i===0||!b).length;
   const era=cfg.era==='classic'?'🏆 Klasik':cfg.era==='mix'?'🔀 Karışık':'⚽ Güncel';
-  return cfg.n+' koltuk (👤 '+hum+' · 🤖 '+(cfg.n-hum)+') · '+(cfg.mode==='draft'?'🃏 Hızlı seçim':'🔨 Açık artırma')+' · '+era+' · kadro '+cfg.squad+(cfg.mode==='auction'?' · bütçe '+cfg.budget+' TL':'');
+  return cfg.n+' koltuk (👤 '+hum+' · 🤖 '+(cfg.n-hum)+') · '+(cfg.mode==='draft'?'🃏 Hızlı seçim':'🔨 Açık artırma')+' · '+era+' · kadro '+cfg.squad+(cfg.mode==='auction'?' · bütçe '+cfg.budget+' TL'+(cfg.swap?' · 🔁 takas kartı':''):'');
 }
 function onlineModalHTML(){
   const head=`<div class="sheet"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2 style="margin:0">🌐 Online oyna</h2><button onclick="closeOnline()">✖ Kapat</button></div>
@@ -2414,6 +2500,7 @@ function assignSeat(key,nick){
 }
 function hostAct(si,a){
   if(a.t==='tac'){if(ONL.phase!=='lobby')applyTactic(si,a.fm,a.o);return;}
+  if(a.t==='swap'){if(A&&A.mode==='auction'&&ONL.phase==='squads'&&doSwap(A,si,+a.m,+a.j,+a.q)){onlinePublish();render();}return;}
   if(A&&A.mode==='draft'){ // hızlı seçim: evet / hayır / premium
     if(ONL.phase!=='auction'||A.done||A.turn!==si||A.managers[si].bot)return;
     if(a.t==='yes'){if(draftTake(A,false)){draftAdvance(A);afterDraft();}}
@@ -2423,9 +2510,9 @@ function hostAct(si,a){
   }
   if(ONL.phase!=='auction'||!A||!A.lot)return;
   const lot=A.lot;if(lot.turn!==si||A.managers[si].bot)return;
-  if(a.t==='bid'){if(lot.mystery&&lot.offer)return;if(placeBid(A,parseInt(a.v,10)))afterAuction();}
-  else if(a.t==='pass'){if(lot.mystery&&lot.offer)return;passTurn(A);afterAuction();}
-  else if(a.t==='myst'&&lot.mystery&&lot.offer){if(a.take)takeMystery(A);else declineMystery(A);afterAuction();}
+  if(a.t==='bid'){if(lot.offer)return;if(placeBid(A,parseInt(a.v,10)))afterAuction();}
+  else if(a.t==='pass'){if(lot.offer)return;passTurn(A);afterAuction();}
+  else if(a.t==='myst'&&lot.offer&&(lot.mystery||lot.card)){if(a.take)takeMystery(A);else declineMystery(A);afterAuction();}
 }
 function applyTactic(si,fm,order){
   if(!A)return;const m=A.managers[si];if(!m||m.bot)return;
@@ -2537,7 +2624,7 @@ function pubA(){
   }
   const lot=A.lot;
   return {mode:'auction',managers:A.managers.map(m=>({name:m.name,bot:!!m.bot,budget:m.budget,squad:m.squad.slice()})),lotNo:A.lotNo,total:A.total,qn:A.queue.length,done:!!A.done,last:A.last||null,filled:A.filled?A.filled.length:0,
-    lot:lot?{pid:lot.mystery?-1:lot.pid,bid:lot.bid,leader:lot.leader,active:lot.active.slice(),turn:lot.turn,mystery:!!lot.mystery,offer:!!lot.offer}:null};
+    lot:lot?{pid:lot.mystery?-1:lot.pid,bid:lot.bid,leader:lot.leader,active:lot.active.slice(),turn:lot.turn,mystery:!!lot.mystery,offer:!!lot.offer,card:!!lot.card}:null,swap:A.swap||null};
 }
 function snapDraft(){
   return {mode:'draft',managers:A.managers.map(m=>({name:m.name,bot:!!m.bot,aggr:m.aggr,squad:m.squad,passes:m.passes,passMax:m.passMax,prem:m.prem===Infinity?-1:m.prem,seen:[...(m.seen||[])],tactic:m.tactic||null})),
@@ -2578,7 +2665,7 @@ function onlinePublish(){
 function snapshot(){
   return {phase:ONL.phase,seats:ONL.seats,name:ONL.name,v:ONL.v,ready:ONL.ready,pw:ONL.pw||'',listed:ONL.listed!==false,sigOn:!!PUB.on,sigPw:ONL.sigPw||'',sigListed:ONL.sigListed!==false,
     cfg:{n:cfg.n,squad:cfg.squad,budget:cfg.budget,double:!!cfg.double,mystery:!!cfg.mystery,mode:cfg.mode,passMult:cfg.passMult,premium:cfg.premium,era:cfg.era||'now'},
-    A:A&&A.mode==='draft'?snapDraft():A&&{managers:A.managers.map(m=>({name:m.name,bot:!!m.bot,aggr:m.aggr,budget:m.budget,squad:m.squad,tactic:m.tactic||null})),queue:A.queue,discarded:A.discarded,lot:A.lot,lotNo:A.lotNo,last:A.last||null,done:!!A.done,total:A.total,lastMyst:!!A.lastMyst,fill:A.filled?A.filled.length:0},
+    A:A&&A.mode==='draft'?snapDraft():A&&{managers:A.managers.map(m=>({name:m.name,bot:!!m.bot,aggr:m.aggr,budget:m.budget,squad:m.squad,tactic:m.tactic||null})),queue:A.queue,discarded:A.discarded,lot:A.lot,lotNo:A.lotNo,last:A.last||null,done:!!A.done,total:A.total,lastMyst:!!A.lastMyst,swap:A.swap||null,fill:A.filled?A.filled.length:0},
     L:L&&{rounds:L.rounds,week:L.week}};
 }
 function saveSnapshotLater(){
@@ -2599,7 +2686,7 @@ async function onlineResume(code){
     if(S.A&&S.A.mode==='draft'){A=restoreDraft(S.A);}
     else if(S.A){
       A={mode:'auction',cfg,managers:S.A.managers.map(m=>({name:m.name,bot:m.bot,aggr:m.aggr||1,budget:m.budget,squad:m.squad,tactic:m.tactic||undefined})),
-        queue:S.A.queue,discarded:S.A.discarded||[],lot:S.A.lot,lotNo:S.A.lotNo,last:S.A.last,done:S.A.done,total:S.A.total,lastMyst:S.A.lastMyst,rng:Math.random};
+        queue:S.A.queue,discarded:S.A.discarded||[],lot:S.A.lot,lotNo:S.A.lotNo,last:S.A.last,done:S.A.done,total:S.A.total,lastMyst:S.A.lastMyst,swap:S.A.swap||null,rng:Math.random};
       if(S.A.fill)A.filled=new Array(S.A.fill).fill(0);
     }
     ONL.resDocs={};
@@ -2699,7 +2786,7 @@ function hydrateA(d){
   if(a.mode==='draft')return {mode:'draft',cfg,managers:a.managers.map((m,i)=>({name:m.name,bot:m.bot,squad:m.squad.slice(),passes:m.passes,passMax:m.passMax,prem:m.prem<0?Infinity:m.prem,seen:new Set(),tactic:tac(i)})),
     turn:a.turn,cur:a.cur<0?null:a.cur,curPrem:a.curPrem,done:a.done,last:a.last,lastHuman:a.lastHuman,log:a.log||[],total:a.total,pool:new Array(a.qn||0).fill(0),pAvailPub:a.pAvail,rng:Math.random};
   return {mode:'auction',cfg,managers:a.managers.map((m,i)=>({name:m.name,bot:m.bot,budget:m.budget,squad:m.squad.slice(),tactic:tac(i)})),
-    queue:new Array(a.qn).fill(0),discarded:[],lot:a.lot,lotNo:a.lotNo,total:a.total,last:a.last,done:a.done,filled:new Array(a.filled||0).fill(0),rng:Math.random};
+    queue:new Array(a.qn).fill(0),discarded:[],lot:a.lot,lotNo:a.lotNo,total:a.total,last:a.last,done:a.done,filled:new Array(a.filled||0).fill(0),swap:a.swap||null,rng:Math.random};
 }
 function onResSnap(snap){
   if(!ONL.on||ONL.role==='host')return;
@@ -2765,8 +2852,8 @@ function lobbyHTML(){
 }
 function waitCardHTML(m,t,lot){
   const bot=!!m.bot,mine=ONL.on&&ONL.mySeat===t;
-  const txt=bot?(lot.mystery&&lot.offer?'Bot sürpriz kartı alıp almayacağına karar veriyor.':'Bot hamlesini yapıyor, birazdan teklif verecek ya da pas geçecek.'):
-    mine?'Hamlen host\'a iletildi, yanıt bekleniyor…':(lot.mystery&&lot.offer?`${esc(m.name)} sürpriz kartı alıp almayacağına karar veriyor.`:`${esc(m.name)} hamlesini yapıyor.`);
+  const txt=bot?(lot.offer?(lot.card?'Bot Takas Kartını alıp almayacağına karar veriyor.':'Bot sürpriz kartı alıp almayacağına karar veriyor.'):'Bot hamlesini yapıyor, birazdan teklif verecek ya da pas geçecek.'):
+    mine?'Hamlen host\'a iletildi, yanıt bekleniyor…':(lot.offer?`${esc(m.name)} ${lot.card?'Takas Kartını':'sürpriz kartı'} alıp almayacağına karar veriyor.`:`${esc(m.name)} hamlesini yapıyor.`);
   const ctl=(ONL.on&&ONL.role==='host'&&!bot&&!mine)?`<div class="row" style="margin-top:8px"><button onclick="hostSkip()">⏭ Sırayı geçir (pas)</button><button onclick="hostBotify(${t})">🤖 Bota devret</button></div>`:'';
   return `<div class="card" style="border-color:${COL[t]}"><h2>Sıra: ${esc(m.name)} <span class="muted" style="font-weight:400">· ${bot?'düşünüyor…':'oynuyor…'}</span></h2><p class="note">${txt}</p>${ctl}</div>`;
 }
@@ -3391,8 +3478,8 @@ function localSave(){
   try{
     if(ONL.on||screen==='setup'||!A)return;
     const sv={v:1,t:Date.now(),screen,
-      cfg:{n:cfg.n,names:cfg.names,bots:cfg.bots,squad:cfg.squad,budget:cfg.budget,double:!!cfg.double,mystery:!!cfg.mystery,mode:cfg.mode,passMult:cfg.passMult,premium:cfg.premium,era:cfg.era||'now'},
-      A:A.mode==='draft'?snapDraft():{mode:'auction',managers:A.managers.map(m=>({name:m.name,bot:!!m.bot,aggr:m.aggr,budget:m.budget,squad:m.squad,tactic:m.tactic||null})),queue:A.queue,discarded:A.discarded,lot:A.lot,lotNo:A.lotNo,last:A.last||null,done:!!A.done,total:A.total,lastMyst:!!A.lastMyst,fill:A.filled?A.filled.length:0},
+      cfg:{n:cfg.n,names:cfg.names,bots:cfg.bots,squad:cfg.squad,budget:cfg.budget,double:!!cfg.double,mystery:!!cfg.mystery,mode:cfg.mode,passMult:cfg.passMult,premium:cfg.premium,era:cfg.era||'now',swap:!!cfg.swap},
+      A:A.mode==='draft'?snapDraft():{mode:'auction',managers:A.managers.map(m=>({name:m.name,bot:!!m.bot,aggr:m.aggr,budget:m.budget,squad:m.squad,tactic:m.tactic||null})),queue:A.queue,discarded:A.discarded,lot:A.lot,lotNo:A.lotNo,last:A.last||null,done:!!A.done,total:A.total,lastMyst:!!A.lastMyst,swap:A.swap||null,fill:A.filled?A.filled.length:0},
       L:L&&{rounds:L.rounds,week:L.week,played:(L.results||[]).slice(0,L.week).map(wk=>(wk||[]).map(r=>[r.h,r.a,r.hg,r.ag,r.events.map(e=>[e.min,e.side==='a'?1:0,e.player.id,e.assist?e.assist.id:-1,Math.max(0,KIND.indexOf(e.kind||'normal'))])]))}};
     localStorage.setItem(SAVE_KEY,JSON.stringify(sv));
   }catch(e){}
@@ -3408,7 +3495,7 @@ function localLoad(){
     if(sv.A.mode==='draft')A=restoreDraft(sv.A);
     else{
       A={mode:'auction',cfg,managers:sv.A.managers.map(m=>({name:m.name,bot:m.bot,aggr:m.aggr||1,budget:m.budget,squad:m.squad,tactic:m.tactic||undefined})),
-        queue:sv.A.queue,discarded:sv.A.discarded||[],lot:sv.A.lot,lotNo:sv.A.lotNo,last:sv.A.last,done:sv.A.done,total:sv.A.total,lastMyst:sv.A.lastMyst,rng:Math.random};
+        queue:sv.A.queue,discarded:sv.A.discarded||[],lot:sv.A.lot,lotNo:sv.A.lotNo,last:sv.A.last,done:sv.A.done,total:sv.A.total,lastMyst:sv.A.lastMyst,swap:sv.A.swap||null,rng:Math.random};
       if(sv.A.fill)A.filled=new Array(sv.A.fill).fill(0);
     }
     L=null;
