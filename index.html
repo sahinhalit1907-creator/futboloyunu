@@ -100,6 +100,10 @@ details summary{cursor:pointer;font-weight:600}
 @supports not (aspect-ratio:1/1){.tpitch{height:0;padding-bottom:133.33%;max-height:none}.tpitch .tc{height:0;padding-bottom:22%}}
 
 html,body{overscroll-behavior-y:none}
+.atg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 6px;margin-top:6px}
+.at{display:flex;align-items:center;gap:4px;font-size:.66rem}
+.at b{min-width:2.1em;text-align:center;border-radius:6px;padding:1px 3px;color:#fff;font-size:.78rem;line-height:1.25}
+.at i{font-style:normal;color:var(--muted);font-weight:700;letter-spacing:-.2px}
 .hud .sc{white-space:nowrap;flex:none}.hud>span:not(.sc){min-width:0;font-size:.95rem;line-height:1.2}
 .kd{display:inline-block;width:.8em;height:.8em;border-radius:50%;border:1.5px solid rgba(0,0,0,.45);margin-right:4px;vertical-align:-.05em}
 .fmgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
@@ -999,6 +1003,24 @@ RAW_CL.trim().split('\n').forEach(l=>{const [name,dp,ctry,ovr]=l.split('|');PLAY
 // 🔁 Takas Kartı: açık artırmada tek seferlik kart (oyuncu değildir; havuza girmez)
 const SWAP_ID=PLAYERS.length;PLAYERS.push({id:SWAP_ID,name:'Takas Kartı',dp:'ST',pos:'FWD',ctry:'',ovr:0,card:true});
 const CARD_PRICE=10;
+
+// ---- Oyuncu özellikleri (TAHMİNİ): reytingden + mevki profilinden + oyuncuya özgü sabit sapmadan türetilir ----
+// Ağırlıklı ortalama oyuncunun reytingine eşitlenir. Kaleci: REF ZIP DEG HIZ POZ TUT; dış saha: HIZ ŞUT PAS DRİ DEF FİZ
+const ATTR_GK=[['REF','Refleks'],['ZIP','Zıplama'],['DEG','Degaj'],['HIZ','Hız'],['POZ','Pozisyon alma'],['TUT','Tutma']];
+const ATTR_OF=[['HIZ','Hız'],['ŞUT','Şut'],['PAS','Pas'],['DRİ','Top sürme'],['DEF','Defans'],['FİZ','Fizik']];
+const ATTR_OFF={GK:[2,-2,-6,-20,1,0],CB:[-8,-25,-8,-15,4,4],LB:[3,-22,-3,-5,-1,-3],RB:[3,-22,-3,-5,-1,-3],DM:[-8,-12,0,-6,3,2],CM:[-5,-6,3,0,-15,-3],AM:[-1,1,4,5,-38,-10],LW:[7,-3,-2,6,-48,-12],RW:[7,-3,-2,6,-48,-12],SS:[0,3,0,4,-48,-10],ST:[1,4,-10,-2,-50,-2]};
+const ATTR_WT={GK:[.25,.10,.10,.05,.25,.25],CB:[.10,.03,.12,.07,.38,.30],LB:[.20,.04,.18,.14,.22,.22],RB:[.20,.04,.18,.14,.22,.22],DM:[.10,.06,.24,.12,.30,.18],CM:[.12,.12,.28,.20,.14,.14],AM:[.12,.20,.28,.28,.04,.08],LW:[.24,.20,.16,.28,.04,.08],RW:[.24,.20,.16,.28,.04,.08],SS:[.14,.28,.16,.28,.04,.10],ST:[.14,.38,.06,.18,.04,.20]};
+const ATTR_STYLE={"Kylian Mbappé":[10,3,0,5,0,-4],"Erling Haaland":[6,5,-6,-8,0,10],"Vinícius Júnior":[8,0,-2,9,0,-6],"Lamine Yamal":[3,0,2,9,0,-10],"Mohamed Salah":[6,4,0,3,0,-2],"Lionel Messi":[-3,3,7,10,0,-10],"Cristiano Ronaldo":[-2,6,-3,0,0,6],"Kevin De Bruyne":[-6,3,10,0,-4,-2],"Rodri":[-3,0,3,0,4,3],"N'Golo Kanté":[1,-5,-3,0,8,2],"Jude Bellingham":[0,2,0,3,0,4],"Pedri":[-2,-2,4,6,0,-10],"Virgil van Dijk":[-4,-5,0,-5,4,8],"Trent Alexander-Arnold":[0,0,10,0,-10,-6],"Achraf Hakimi":[9,0,0,2,0,-2],"Alphonso Davies":[12,-4,0,3,0,-2],"Harry Kane":[-4,6,6,-6,0,6],"Robert Lewandowski":[-4,8,0,-4,0,4],"Ronaldinho":[0,0,3,10,-5,-8],"Pelé":[2,4,3,8,0,0],"Diego Maradona":[2,0,2,12,-5,-6],"Ronaldo Nazário":[8,6,-6,8,-8,2],"Roberto Carlos":[6,8,0,0,-8,2],"Paolo Maldini":[0,-8,0,0,8,2],"Franz Beckenbauer":[-2,-6,6,2,6,0],"Zinedine Zidane":[-8,0,6,10,-6,4],"Garrincha":[8,0,0,12,-6,-10],"Lionel Messi (Prime)":[2,4,8,12,0,-10],"Cristiano Ronaldo (Prime)":[4,7,-2,3,0,6],"Alisson Becker":[0,0,6,0,3,2],"Thibaut Courtois":[0,4,0,0,2,3],"Ederson":[-2,-2,14,6,0,0],"Jan Oblak":[4,0,0,0,3,3],"Gianluigi Donnarumma":[2,6,0,0,0,2],"Lev Yashin":[3,2,0,0,5,3],"Gianluigi Buffon":[2,0,0,0,5,5],"Iker Casillas":[8,0,0,0,0,0],"Oliver Kahn":[2,0,0,0,3,6],"Peter Schmeichel":[0,6,0,0,5,3],"René Higuita":[6,0,12,0,-5,0]};
+function attrsOf(p){
+  if(p._at)return p._at;
+  const keys=p.dp==='GK'?ATTR_GK:ATTR_OF,off=ATTR_OFF[p.dp],w=ATTR_WT[p.dp],st=ATTR_STYLE[p.name]||[0,0,0,0,0,0];
+  let h=2166136261;for(const ch of p.name){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}
+  const rnd=()=>{h=(h+0x6D2B79F5)|0;let t=Math.imul(h^(h>>>15),1|h);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};
+  const raw=keys.map((k,i)=>p.ovr+off[i]+(rnd()*2-1)*5+st[i]);
+  const sh=p.ovr-raw.reduce((a,v,i)=>a+v*w[i],0);
+  const soft=v=>v>88?88+(v-88)*0.6:v;   // en tepedeki değerler yumuşakça sıkışır: her şey 99'a yapışmaz
+  return p._at=keys.map((k,i)=>({k:k[0],n:k[1],v:Math.max(28,Math.min(99,Math.round(soft(raw[i]+sh))))}));
+}
 // Oyuncu havuzu: 'now' güncel yıldızlar (varsayılan), 'classic' yalnızca efsaneler, 'mix' hepsi
 const eraOK=(c,p)=>p.card?false:c&&c.era==='classic'?!!p.cl:c&&c.era==='mix'?true:!p.cl;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -1974,6 +1996,11 @@ function setFm(t,fm){
   if(ONL.on&&ONL.role!=='host')onlineSend({t:'tac',fm,o:[]});   // misafir: host uygular ve yayınlar
   else{applyTactic(t,fm,[]);render();}
 }
+function attrBoxHTML(p){
+  if(!p||p.card)return '';
+  const col=v=>v>=85?'#16a34a':v>=75?'#65a30d':v>=65?'#d97706':'#dc2626';
+  return `<div class="atg" title="Tahmini özellikler (reytingden türetilir)">${attrsOf(p).map(a=>`<div class="at" title="${a.n}"><b style="background:${col(a.v)}">${a.v}</b><i>${a.k}</i></div>`).join('')}</div>`;
+}
 function mpTip(el){const c=$('mpcap');if(c)c.textContent=el.getAttribute('data-t')||'';}
 function auctionHTML(){
   const lot=A.lot,p=P(lot.pid),t=lot.turn,m=A.managers[t],mx=maxBid(A,t),min=lot.bid+1,mine=!m.bot&&canAct(t);
@@ -1992,7 +2019,7 @@ function auctionHTML(){
     lot.mystery?`<div class="card lotc" style="border-color:var(--gold)"><span class="pill" style="background:var(--gold);color:#422006;align-self:flex-start">🎁 SÜRPRİZ KART</span><div class="nm">❓ Gizli yıldız</div>
       <div class="r1"><span class="ovr" style="background:var(--muted)">85+</span><div><div class="mu">${lot.offer?'Kart fiyatı':'Güncel teklif'}</div><div class="bid">${lot.offer?1:lot.bid} TL</div></div></div><div class="mu">${lead}</div></div>`:
     `<div class="card lotc"><div class="mu">${posPill(p)} ${esc(p.ctry)}</div><div class="nm">${esc(p.name)}</div>
-      <div class="r1"><span class="ovr">${p.ovr}</span><div><div class="mu">Güncel teklif</div><div class="bid">${lot.bid} TL</div></div></div><div class="mu">${lead}</div></div>`;
+      <div class="r1"><span class="ovr">${p.ovr}</span><div><div class="mu">Güncel teklif</div><div class="bid">${lot.bid} TL</div></div></div>${attrBoxHTML(p)}<div class="mu">${lead}</div></div>`;
   const ctl=(m.bot||!canAct(t)||ackWait())?waitCardHTML(m,t,lot):
     lot.card&&lot.offer?`<div class="card cmp" style="border-color:#7c3aed"><div class="h"><b>🔁 ${esc(m.name)}, Takas Kartı!</b><span class="muted">${ONL.on?'sıra sende':'cihazı ver'}</span></div>
       <p class="note" style="margin:0 0 8px;font-size:.8rem">Oyun başına tek kart. <b>${CARD_PRICE} TL</b>'ye alırsan açık artırma bittikten sonra kendi oyuncunu bir rakibin <b>aynı mevkideki</b> oyuncusuyla değiştirebilirsin. İstemezsen açık artırmaya çıkar; diğerleri ${CARD_PRICE} TL'nin üzerine çıkıp alabilir.</p>
@@ -2024,7 +2051,7 @@ function draftHTML(){
       <div class="chips">${mm.squad.map(id=>chip(P(id))).join('')}</div></div>`;}).join('');
   const showSq=!m.bot&&canAct(t);
   const lotC=`<div class="card lotc" ${D.curPrem?'style="border-color:var(--gold)"':''}>${D.curPrem?'<span class="pill" style="background:var(--gold);color:#422006;align-self:flex-start">⭐ PREMIUM FUTBOLCU</span>':''}<div class="mu">${esc(m.name)}, önüne gelen</div><div class="mu">${posPill(p)} ${esc(p.ctry)}</div><div class="nm">${esc(p.name)}</div>
-    <div class="r1"><span class="ovr">${p.ovr}</span><div class="mu">${fits?'✅ Bu mevkiye ihtiyacın var':'⚠️ Bu mevki kadronda dolu'}</div></div></div>`;
+    <div class="r1"><span class="ovr">${p.ovr}</span><div class="mu">${fits?'✅ Bu mevkiye ihtiyacın var':'⚠️ Bu mevki kadronda dolu'}</div></div>${attrBoxHTML(p)}</div>`;
   const ctl=mine?`<div class="card cmp" style="border-color:${COL[t]}"><div class="row" style="flex-wrap:nowrap;gap:8px">
       <button class="primary" style="flex:1;font-size:1.05rem" onclick="draftYes()">✅ Evet, al</button>
       <button class="danger" style="flex:1;font-size:1.05rem" ${forced?'disabled':''} onclick="draftNo()">❌ Hayır</button></div>
@@ -2355,7 +2382,7 @@ function newGame(){if(confirm('Yeni oyun başlasın mı?')){clearTimeout(botTime
 // ================= 🌐 ONLINE (çok oyunculu) =================
 // Mimari: sayfanın SAHİBİ (host) oyunun tek doğru kaynağıdır. Durumu `db`'ye yazar; misafirler onu canlı okur.
 // Misafirler hamlelerini `room` presence kanalıyla host'a iletir (yazma yetkisi gerekmez).
-const BUILD='2026-10-19 · v24';
+const BUILD='2026-10-22 · v25';
 const IN_CLAUDE=()=>typeof window!=='undefined'&&!!(window.claude&&window.claude.use);
 const KIND=['normal','long','pen'];
 const ONL={on:false,role:null,code:null,name:'',phase:null,seats:[],mySeat:-1,myKey:null,nick:'',
