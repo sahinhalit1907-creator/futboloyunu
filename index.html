@@ -100,6 +100,10 @@ details summary{cursor:pointer;font-weight:600}
 @supports not (aspect-ratio:1/1){.tpitch{height:0;padding-bottom:133.33%;max-height:none}.tpitch .tc{height:0;padding-bottom:22%}}
 
 html,body{overscroll-behavior-y:none}
+.dpw{max-width:300px;margin:8px auto 0}.dpw.sm{max-width:150px}
+.dpw .mpd b{width:30px;height:30px;font-size:.8rem}.dpw .mpd.m b{font-size:.55rem}.dpw.sm .mpd b{width:17px;height:17px;font-size:.5rem;border-width:1.5px}.dpw.sm .mpd i{display:none}
+.mpd.tap{cursor:pointer}.mpd.tap b{box-shadow:0 0 0 3px rgba(255,255,255,.85),0 0 0 6px rgba(239,68,68,.45)}
+.die{font-size:2.6rem;line-height:1;margin:0 2px}
 .atg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 6px;margin-top:6px}
 .at{display:flex;align-items:center;gap:4px;font-size:.66rem}
 .at b{min-width:2.1em;text-align:center;border-radius:6px;padding:1px 3px;color:#fff;font-size:.78rem;line-height:1.25}
@@ -151,6 +155,7 @@ html,body{overscroll-behavior-y:none}
 <div id="app"></div>
 <div id="tmodal" class="modal" hidden></div>
 <div id="pmodal" class="modal" hidden></div>
+<div id="dpmodal" class="modal" hidden></div>
 <div id="swmodal" class="modal" hidden></div>
 <div id="fmmodal" class="modal" hidden></div>
 <div id="omodal" class="modal" hidden onclick="if(event.target===this)closeOnline()"></div>
@@ -1835,7 +1840,7 @@ function render(){
   let h;
   if(screen==='setup')h=setupHTML();
   else if(screen==='olobby')h=lobbyHTML();
-  else if(screen==='auction')h=A.mode==='draft'?draftHTML():auctionHTML();
+  else if(screen==='auction')h=A.mode==='duel'?duelHTML():(A.mode==='draft'?draftHTML():auctionHTML());
   else if(screen==='squads')h=squadsHTML();
   else h=leagueHTML();
   app.innerHTML=(ONL.on&&screen!=='setup'?onlineBarHTML():'')+h+(!ONL.on&&(screen==='auction'||screen==='squads')?'<div style="text-align:center;margin:22px 0 6px"><button onclick="newGame()">🏠 Ana menü / Yeni oyun</button></div>':'');
@@ -1866,7 +1871,7 @@ function playersHTML(){
       <button style="padding:10px 12px" class="${cfg.bots[i]?'on':''}" onclick="setBot(${i},true)" title="Bot">🤖</button></div>
       <input type="text" maxlength="16" style="flex:1;min-width:0" placeholder="${cfg.bots[i]?'Bot adı (isteğe bağlı)':'Oyuncu '+(i+1)}" value="${esc(cfg.names[i])}" oninput="cfg.names[${i}]=this.value"></div></div>`).join('')+`</div>`;
 }
-function setupHTML(){
+function setupHTMLBase(){
   return `<h1>⚽ Transfer Savaşı</h1><p class="sub">Aynı cihazda sırayla oyna: açık artırmayla kadronu kur, ligde yüzleş.</p>
   <div class="card"><h2>Oyuncular: <span id="nv">${cfg.n}</span> kişi</h2>
     <input type="range" id="nrange" min="2" max="16" value="${cfg.n}" oninput="setN(+this.value)">
@@ -1878,7 +1883,7 @@ function setupHTML(){
     <p class="note" style="margin-top:8px">${cfg.era==='classic'?'<b>Yalnızca efsaneler</b> gelir: Pelé, Maradona, Cruyff, Beckenbauer, Zidane, Ronaldo Nazário, Ronaldinho, Roberto Carlos, Dida, Maldini ve daha fazlası ('+PLAYERS.filter(p=>p.cl).length+' oyuncu, puanlar kariyer zirvesine göre).':cfg.era==='mix'?'Güncel yıldızlar ve efsaneler <b>birlikte</b> havuza girer ('+PLAYERS.filter(p=>!p.card).length+' oyuncu). Efsaneler genelde daha yüksek puanlıdır.':'Bugünün yıldızları ('+PLAYERS.filter(p=>!p.cl&&!p.card).length+' oyuncu, Süper Lig takımları dahil).'}</p>
   </div>
   <div class="card"><h2>Kadro kurma yöntemi</h2>
-    <div class="row seg"><button class="${cfg.mode==='auction'?'on':''}" onclick="setMode('auction')">🔨 Açık artırma</button><button class="${cfg.mode==='draft'?'on':''}" onclick="setMode('draft')">🃏 Hızlı seçim</button></div>
+    <div class="row seg"><button class="${cfg.mode==='auction'?'on':''}" onclick="setMode('auction')">🔨 Açık artırma</button><button class="${cfg.mode==='draft'?'on':''}" onclick="setMode('draft')">🃏 Hızlı seçim</button><button class="${cfg.mode==='duel'?'on':''}" onclick="setMode('duel')">⚔️ Düello</button></div>
     <p class="note" style="margin-top:8px">${cfg.mode==='auction'?'Her futbolcu için teklif verilir. Çok oyunculu / botlu oyunlarda uzun sürebilir.':'Açık artırma yok: önüne gelen futbolcuya <b>evet</b> (al) ya da <b>hayır</b> (pas) dersin. Botlar da aynı kurallarla anında seçer. Çok botlu oyunlar için ideal.'}</p>
     ${cfg.mode==='draft'?`<label>Pas (hayır) hakkı: <b>${cfg.passMult}× kadro = ${cfg.passMult*cfg.squad}</b> <span class="muted">(herkese eşit)</span></label>
     <div class="row seg">${[1,2,3].map(k=>`<button class="${cfg.passMult===k?'on':''}" onclick="setPass(${k})">${['Az','Orta','Çok'][k-1]} (${k}×)</button>`).join('')}</div>
@@ -1910,7 +1915,11 @@ function setupHTML(){
   </details>
   <p class="note" style="text-align:center;margin-top:14px">Sürüm ${BUILD}</p>`;
 }
-function setMode(m){cfg.mode=m;render();}
+function setMode(m){
+  cfg.mode=m;
+  if(m==='duel'){cfg.n=2;cfg.bots=Array(16).fill(true);cfg.bots[0]=false;cfg.bots[1]=false;cfg.squad=11;cfg.double=true;}  // düello: 2 insan, 11'lik kadro, 2 maç
+  render();
+}
 function setEra(e){cfg.era=e;render();}
 function setPass(k){cfg.passMult=k;render();}
 function setPrem(k){cfg.premium=k;render();}
@@ -1935,7 +1944,7 @@ function scheduleBot(){
 }
 function setSquad(v){cfg.squad=v;if(cfg.budget<v){cfg.budget=v;const b=$('bg');if(b){b.value=v;$('bgv').textContent=v;}}$('sqv').textContent=v;}
 function setBudget(v){cfg.budget=v;if(cfg.squad>v){cfg.squad=v;$('sq').value=v;$('sqv').textContent=v;}$('bgv').textContent=v;}
-function startGame(){clearTimeout(botTimer);A=cfg.mode==='draft'?newDraft(cfg):newAuction(cfg);screen=A.done?'squads':'auction';render();scheduleBot();}
+function startGame(){clearTimeout(botTimer);A=(cfg.mode==='duel'?newDuel(cfg):cfg.mode==='draft'?newDraft(cfg):newAuction(cfg));screen=A.done?'squads':'auction';render();scheduleBot();}
 
 // --- Açık artırma ---
 // Küçük saha: hedef dizilişin yuvaları. Dolu = mavi daire (soyadının baş harfi), eksik = kırmızı daire (mevki kısaltması)
@@ -1980,6 +1989,7 @@ function fmPick(k){const fm=FMP.list&&FMP.list[k],cb=FMP.cb;if(!fm)return;closeF
 // Yerel oyun: her insan sırayla formasyonunu seçer, sonra oyun (havuz o dizilişlere göre) kurulur
 function startFlow(){
   clearTimeout(botTimer);
+  if(cfg.mode==='duel'){cfg.fms=null;beginGame();return;}
   const humans=[];for(let i=0;i<cfg.n;i++)if(!cfg.bots[i])humans.push(i);
   cfg.fms=new Array(cfg.n).fill(null);
   const next=()=>{
@@ -1989,7 +1999,7 @@ function startFlow(){
   };
   next();
 }
-function beginGame(){A=cfg.mode==='draft'?newDraft(cfg):newAuction(cfg);cfg.fms=null;screen=A.done?'squads':'auction';render();scheduleBot();}
+function beginGame(){A=(cfg.mode==='duel'?newDuel(cfg):cfg.mode==='draft'?newDraft(cfg):newAuction(cfg));cfg.fms=null;screen=A.done?'squads':'auction';render();scheduleBot();}
 function changeFm(t){openFmPicker(t,'Formasyonunu değiştir',fm=>setFm(t,fm),false);}
 function setFm(t,fm){
   if(!A)return;
@@ -2083,6 +2093,96 @@ function bidCustom(){
 function doPass(){if(ONL.on&&ONL.role!=='host'){onlineSend({t:'pass'});return;}passTurn(A);afterAuction();}
 function doMystery(take){if(ONL.on&&ONL.role!=='host'){onlineSend({t:'myst',take:!!take});return;}if(take)takeMystery(A);else declineMystery(A);afterAuction();}
 
+
+
+// ================= ⚔️ DÜELLO MODU =================
+// 2 kişi: 2'li zarla ilk seçen belirlenir; sırası gelen formasyonunu seçer, sahada bir mevkiye dokunup o mevkinin en iyi 20 oyuncusundan birini alır.
+// Sıra her seçimde rakibe geçer; ikisi de 11 oyuncuyu tamamlayınca 2 maç oynanır.
+const DUEL_TOP=25,DIEF='⚀⚁⚂⚃⚄⚅',DU={k:null};
+function duelPool(cfg){const out={};for(const r of DPS)out[r]=PLAYERS.filter(p=>eraOK(cfg,p)&&p.dp===r).sort((a,b)=>b.ovr-a.ovr||a.id-b.id).slice(0,DUEL_TOP).map(p=>p.id);return out;}  // her mevkiden en yüksek puanlı oyuncular
+function newDuel(cfg){
+  const mk=i=>({name:(cfg.names[i]||'').trim()||('Oyuncu '+(i+1)),bot:false,aggr:1,budget:0,squad:[],slots:[],tactic:undefined});
+  return {mode:'duel',cfg,managers:[mk(0),mk(1)],pool:duelPool(cfg),phase:'dice',dice:[null,null],tie:false,first:0,turn:0,picks:0,last:null,done:false,total:22};
+}
+function restoreDuel(a){
+  const A2=newDuel(cfg);
+  A2.managers.forEach((m,i)=>{const sm=a.managers[i];m.name=sm.name;m.squad=sm.squad.slice();m.slots=sm.slots.slice();m.tactic=sm.tactic||undefined;});
+  Object.assign(A2,{dice:a.dice,tie:!!a.tie,first:a.first,turn:a.turn,picks:a.picks,phase:a.phase,last:a.last||null,done:!!a.done});
+  return A2;
+}
+const duelSum=d=>d?d[0]+d[1]:0,duelFull=m=>m.squad.length>=11;
+function duelRoll(i){
+  if(!A||A.mode!=='duel'||A.phase!=='dice'||A.dice[i])return;
+  A.dice[i]=[1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)];
+  if(A.dice[0]&&A.dice[1]){const a=duelSum(A.dice[0]),b=duelSum(A.dice[1]);if(a===b)A.tie=true;else{A.first=a>b?0:1;A.phase='ready';}}
+  render();
+}
+function duelReroll(){A.dice=[null,null];A.tie=false;render();}
+function duelBegin(){A.phase='pick';A.turn=A.first;render();duelAskFm();}
+function duelSetFm(t,fm){const m=A.managers[t];m.tactic={fm:fm.slice(),order:[],plan:true};m.slots=new Array(fm.reduce((a,b)=>a+b,1)).fill(null);render();}
+function duelAskFm(){const m=A.managers[A.turn];if(m.tactic)return;openFmPicker(A.turn,m.name+', formasyonunu seç',fm=>duelSetFm(A.turn,fm),true);}
+function duelChangeFm(){const m=A.managers[A.turn];if(m.slots.some(x=>x!=null))return;openFmPicker(A.turn,'Formasyonunu değiştir',fm=>duelSetFm(A.turn,fm),false);}
+function duelList(role){const taken=new Set(A.managers.flatMap(x=>x.squad));return (A.pool[role]||[]).filter(id=>!taken.has(id)).slice(0,20);}
+function duelSlot(k){const m=A.managers[A.turn];if(!m.tactic||m.slots[k]!=null)return;DU.k=k;renderDuelList();}
+function closeDuelList(){const m=$('dpmodal');if(m){m.hidden=true;m.innerHTML='';}}
+function renderDuelList(){
+  const md=$('dpmodal');if(!md)return;const mg=A.managers[A.turn],k=DU.k,role=slotRoles(mg.tactic.fm)[k],list=duelList(role);md.hidden=false;
+  md.innerHTML=`<div class="sheet"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2 style="margin:0;font-size:1.05rem">${esc(POS_FULL[role])} · en iyi ${list.length} oyuncu</h2><button onclick="closeDuelList()">✖ Kapat</button></div>
+    <p class="note" style="margin:4px 0 8px"><b>${esc(mg.name)}</b>, bu mevki için birini seç. Seçince sıra rakibe geçer.</p>
+    ${list.map((id,i)=>{const p=PLAYERS[id],a=attrsOf(p);return `<button style="display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;text-align:left;margin-bottom:6px" onclick="duelPick(${k},${id})"><span><b>${i+1}.</b> ${esc(p.name)} <span class="muted">${esc(p.ctry)}</span><br><small class="muted">${a.map(x=>x.k+' '+x.v).join(' · ')}</small></span><span class="ovr" style="width:38px;height:38px;font-size:1.05rem;flex:none">${p.ovr}</span></button>`;}).join('')||'<p class="note">Bu mevki için havuzda oyuncu kalmadı.</p>'}</div>`;
+}
+function duelPick(k,id){
+  const mg=A.managers[A.turn];if(!mg||!mg.tactic||mg.slots[k]!=null)return;
+  const role=slotRoles(mg.tactic.fm)[k];if(!duelList(role).includes(id))return;
+  mg.slots[k]=id;mg.squad.push(id);A.picks++;A.last={who:A.turn,pid:id};closeDuelList();
+  if(duelFull(A.managers[0])&&duelFull(A.managers[1])){duelFinish();return;}
+  const other=1-A.turn;if(!duelFull(A.managers[other]))A.turn=other;
+  render();duelAskFm();
+}
+function duelFinish(){
+  A.managers.forEach(m=>{m.tactic={fm:m.tactic.fm,order:m.slots.slice()};});   // seçilen mevkilere göre dizilim
+  A.done=true;A.phase='done';screen='squads';render();
+}
+function duelPitchHTML(t,interactive,small){
+  const m=A.managers[t],fm=m.tactic&&m.tactic.fm;
+  if(!fm)return '<p class="note" style="text-align:center">Formasyon henüz seçilmedi.</p>';
+  const slots=pitchSlots(fm),ini=nm=>String(nm).trim().split(/\s+/).pop().charAt(0).toLocaleUpperCase('tr');
+  const dots=slots.map((sl,k)=>{const id=m.slots[k],pos=`left:${(sl.x*100).toFixed(1)}%;top:${(sl.y*100).toFixed(1)}%`;
+    if(id!=null){const p=PLAYERS[id];return `<div class="mpd f" style="${pos}"><b>${esc(ini(p.name))}</b><i>${POS_TR[sl.role]}</i></div>`;}
+    return `<div class="mpd m${interactive?' tap':''}" style="${pos}" ${interactive?`onclick="duelSlot(${k})"`:''}><b>${POS_TR[sl.role]}</b></div>`;}).join('');
+  return `<div class="dpw${small?' sm':''}"><div class="mp"><div class="ln"></div><div class="cc"></div><div class="pb t"></div><div class="pb b"></div>${dots}</div></div>`;
+}
+function duelHTML(){
+  const hd=`<div class="mh"><span>⚔️ Düello</span><span>Seçim ${A.picks}/22</span></div>`;
+  if(A.phase==='dice'||A.phase==='ready'){
+    const card=i=>{const d=A.dice[i];return `<div class="card" style="text-align:center;margin:0;border-color:${COL[i]}"><b>${esc(A.managers[i].name)}</b><div style="margin:8px 0;min-height:3rem">${d?`<span class="die">${DIEF[d[0]-1]}</span><span class="die">${DIEF[d[1]-1]}</span><div style="font-size:1.4rem;font-weight:800">${duelSum(d)}</div>`:`<button class="primary" onclick="duelRoll(${i})">🎲 Zar at</button>`}</div></div>`;};
+    return `${hd}<h1 style="font-size:1.3rem">🎲 İlk seçen kim?</h1><p class="sub">İkiniz de 2 zar atın; toplamı yüksek olan ilk seçer. Beraberlikte tekrar atılır.</p>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px">${card(0)}${card(1)}</div>
+      ${A.tie?`<div class="banner no" style="margin-top:10px">Beraberlik! Tekrar atın.</div><button class="primary" style="width:100%;margin-top:6px" onclick="duelReroll()">🎲 Zarları yeniden at</button>`:''}
+      ${A.phase==='ready'?`<div class="banner" style="margin-top:10px">🏆 <b>${esc(A.managers[A.first].name)}</b> ilk seçecek (${duelSum(A.dice[A.first])} – ${duelSum(A.dice[1-A.first])}).</div><button class="primary" style="width:100%;margin-top:6px" onclick="duelBegin()">▶ Seçime başla</button>`:''}`;
+  }
+  const t=A.turn,m=A.managers[t],o=A.managers[1-t],started=m.slots.some(x=>x!=null);
+  const last=A.last?`<div class="cmpb">✅ ${esc(A.managers[A.last.who].name)} → ${posPill(PLAYERS[A.last.pid])} ${esc(PLAYERS[A.last.pid].name)} <b>${PLAYERS[A.last.pid].ovr}</b></div>`:'';
+  const mine=m.tactic?`<p class="note" style="margin:6px 0 0;text-align:center">Kırmızı (boş) bir mevkiye dokun: o mevkinin en iyi 20 oyuncusu açılır.</p>${duelPitchHTML(t,true,false)}`:`<button class="primary" style="width:100%;margin-top:8px" onclick="duelAskFm()">📋 Formasyonunu seç</button>`;
+  return `${hd}${last}<div class="card" style="border-color:${COL[t]};margin-top:0"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><b>Sıra: ${esc(m.name)} <span class="muted" style="font-weight:400">· ${m.squad.length}/11</span></b>${m.tactic&&!started?`<button class="fmb" style="width:auto" onclick="duelChangeFm()">📋 ${esc(fmLabel(m.tactic.fm))} ▾</button>`:(m.tactic?`<span class="pill">${esc(fmLabel(m.tactic.fm))}</span>`:'')}</div>${mine}</div>
+    <div class="card" style="margin-top:0"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><b>${esc(o.name)}</b><span class="pill">${o.squad.length}/11${o.tactic?' · '+esc(fmLabel(o.tactic.fm)):''}</span></div>${o.tactic?duelPitchHTML(1-t,false,true):'<p class="note">Formasyon henüz seçilmedi.</p>'}</div>`;
+}
+function setupDuelHTML(){
+  const n=esc(cfg.names[0]||''),n2=esc(cfg.names[1]||'');
+  return `<h1>⚽ Transfer Savaşı</h1><p class="sub">Aynı cihazda iki kişilik düello: sırayla en iyi oyunculardan 11'ini seç, 2 maçta yüzleş.</p>
+  <div class="card"><h2>Oyuncular</h2>
+    <input type="text" maxlength="16" placeholder="1. oyuncunun adı" value="${n}" oninput="cfg.names[0]=this.value">
+    <input type="text" maxlength="16" placeholder="2. oyuncunun adı" value="${n2}" oninput="cfg.names[1]=this.value" style="margin-top:8px"></div>
+  <div class="card"><h2>Kadro kurma yöntemi</h2>
+    <div class="row seg"><button onclick="setMode('auction')">🔨 Açık artırma</button><button onclick="setMode('draft')">🃏 Hızlı seçim</button><button class="on" onclick="setMode('duel')">⚔️ Düello</button></div>
+    <p class="note" style="margin-top:8px">İki oyuncu 2 zar atar, yükseği ilk seçer. Sırası gelen formasyonunu seçer; sahada bir mevkiye dokunup o mevkinin <b>en iyi 20 oyuncusundan</b> birini alır. Sıra her seçimde rakibe geçer. 11'ler tamamlanınca 2 maç oynanır.</p></div>
+  <div class="card"><h2>Oyuncu havuzu</h2>
+    <div class="row seg"><button class="${cfg.era==='now'?'on':''}" onclick="setEra('now')">⚽ Güncel yıldızlar</button><button class="${cfg.era==='classic'?'on':''}" onclick="setEra('classic')">🏆 Klasik oyuncular</button><button class="${cfg.era==='mix'?'on':''}" onclick="setEra('mix')">🔀 Karışık</button></div>
+    <p class="note" style="margin-top:8px">Her mevkiden havuzun <b>en yüksek puanlı 25 oyuncusu</b> düelloya girer.</p></div>
+  <button class="primary" style="width:100%;font-size:1.1rem" onclick="startFlow()">⚔️ Düelloyu başlat</button>
+  <p class="note" style="text-align:center;margin-top:14px">Sürüm ${BUILD}</p>`;
+}
+function setupHTML(){return cfg.mode==='duel'?setupDuelHTML():setupHTMLBase();}
 
 // ---- 🔁 Takas Kartı arayüzü ----
 const SW={h:null,mine:null,j:null,q:null};
@@ -2382,7 +2482,7 @@ function newGame(){if(confirm('Yeni oyun başlasın mı?')){clearTimeout(botTime
 // ================= 🌐 ONLINE (çok oyunculu) =================
 // Mimari: sayfanın SAHİBİ (host) oyunun tek doğru kaynağıdır. Durumu `db`'ye yazar; misafirler onu canlı okur.
 // Misafirler hamlelerini `room` presence kanalıyla host'a iletir (yazma yetkisi gerekmez).
-const BUILD='2026-10-22 · v25';
+const BUILD='2026-10-22 · v26';
 const IN_CLAUDE=()=>typeof window!=='undefined'&&!!(window.claude&&window.claude.use);
 const KIND=['normal','long','pen'];
 const ONL={on:false,role:null,code:null,name:'',phase:null,seats:[],mySeat:-1,myKey:null,nick:'',
@@ -2558,7 +2658,7 @@ function onlineStart(){
   cfg.n=ONL.seats.length;
   ONL.seats.forEach((s,i)=>{cfg.bots[i]=!!s.bot;cfg.names[i]=s.bot?(s.cn||''):(s.nick||'');});
   if(cfg.mode!=='draft')cfg.mode='auction';
-  A=cfg.mode==='draft'?newDraft(cfg):newAuction(cfg);
+  A=(cfg.mode==='duel'?newDuel(cfg):cfg.mode==='draft'?newDraft(cfg):newAuction(cfg));
   ONL.phase=A.done?'squads':'auction';screen=A.done?'squads':'auction';render();scheduleBot();onlinePublish();
 }
 function hostSkip(){
@@ -3506,7 +3606,7 @@ function localSave(){
     if(ONL.on||screen==='setup'||!A)return;
     const sv={v:1,t:Date.now(),screen,
       cfg:{n:cfg.n,names:cfg.names,bots:cfg.bots,squad:cfg.squad,budget:cfg.budget,double:!!cfg.double,mystery:!!cfg.mystery,mode:cfg.mode,passMult:cfg.passMult,premium:cfg.premium,era:cfg.era||'now',swap:!!cfg.swap},
-      A:A.mode==='draft'?snapDraft():{mode:'auction',managers:A.managers.map(m=>({name:m.name,bot:!!m.bot,aggr:m.aggr,budget:m.budget,squad:m.squad,tactic:m.tactic||null})),queue:A.queue,discarded:A.discarded,lot:A.lot,lotNo:A.lotNo,last:A.last||null,done:!!A.done,total:A.total,lastMyst:!!A.lastMyst,swap:A.swap||null,fill:A.filled?A.filled.length:0},
+      A:A.mode==='draft'?snapDraft():A.mode==='duel'?{mode:'duel',managers:A.managers.map(m=>({name:m.name,squad:m.squad,slots:m.slots,tactic:m.tactic||null})),dice:A.dice,tie:!!A.tie,first:A.first,turn:A.turn,picks:A.picks,phase:A.phase,last:A.last||null,done:!!A.done}:{mode:'auction',managers:A.managers.map(m=>({name:m.name,bot:!!m.bot,aggr:m.aggr,budget:m.budget,squad:m.squad,tactic:m.tactic||null})),queue:A.queue,discarded:A.discarded,lot:A.lot,lotNo:A.lotNo,last:A.last||null,done:!!A.done,total:A.total,lastMyst:!!A.lastMyst,swap:A.swap||null,fill:A.filled?A.filled.length:0},
       L:L&&{rounds:L.rounds,week:L.week,played:(L.results||[]).slice(0,L.week).map(wk=>(wk||[]).map(r=>[r.h,r.a,r.hg,r.ag,r.events.map(e=>[e.min,e.side==='a'?1:0,e.player.id,e.assist?e.assist.id:-1,Math.max(0,KIND.indexOf(e.kind||'normal'))])]))}};
     localStorage.setItem(SAVE_KEY,JSON.stringify(sv));
   }catch(e){}
@@ -3520,6 +3620,7 @@ function localLoad(){
     if(Date.now()-(sv.t||0)>30*86400e3){localClear();return false;}
     Object.assign(cfg,sv.cfg);
     if(sv.A.mode==='draft')A=restoreDraft(sv.A);
+    else if(sv.A.mode==='duel')A=restoreDuel(sv.A);
     else{
       A={mode:'auction',cfg,managers:sv.A.managers.map(m=>({name:m.name,bot:m.bot,aggr:m.aggr||1,budget:m.budget,squad:m.squad,tactic:m.tactic||undefined})),
         queue:sv.A.queue,discarded:sv.A.discarded||[],lot:sv.A.lot,lotNo:sv.A.lotNo,last:sv.A.last,done:sv.A.done,total:sv.A.total,lastMyst:sv.A.lastMyst,swap:sv.A.swap||null,rng:Math.random};
