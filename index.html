@@ -1007,7 +1007,7 @@ const PLAYERS=RAW.trim().split('\n').map((l,i)=>{const [name,dp,ctry,ovr]=l.spli
 RAW_CL.trim().split('\n').forEach(l=>{const [name,dp,ctry,ovr]=l.split('|');PLAYERS.push({id:PLAYERS.length,name,dp,pos:CORE[dp],ctry,ovr:+ovr,cl:true});});
 // 🔁 Takas Kartı: açık artırmada tek seferlik kart (oyuncu değildir; havuza girmez)
 const SWAP_ID=PLAYERS.length;PLAYERS.push({id:SWAP_ID,name:'Takas Kartı',dp:'ST',pos:'FWD',ctry:'',ovr:0,card:true});
-const CARD_PRICE=10;
+const CARD_PRICE=10,CARD_OPEN=5;   // CARD_OPEN: kart bu fiyattan açılır, herkes teklif verir (yeni kural). CARD_PRICE: eski 'sabit fiyatla alma' yolu (yalnızca eski kayıtlar)
 
 // ---- Oyuncu özellikleri (TAHMİNİ): reytingden + mevki profilinden + oyuncuya özgü sabit sapmadan türetilir ----
 // Ağırlıklı ortalama oyuncunun reytingine eşitlenir. Kaleci: REF ZIP DEG HIZ POZ TUT; dış saha: HIZ ŞUT PAS DRİ DEF FİZ
@@ -1359,9 +1359,9 @@ function startLot(A){
   }
   if(!myst)pid=A.queue.shift();
   A.lotNo++;
-  if(pid===SWAP_ID){ // 🔁 Takas Kartı: sıradaki sabit fiyata alabilir, almazsa 10 TL üzerinden açık artırma
-    A.lastMyst=false;A.lot={pid,bid:0,leader:-1,active:[],turn:-1,mystery:false,offer:true,card:true};
-    A.lot.active=A.managers.map((m,i)=>i).filter(i=>maxBid(A,i)>=CARD_PRICE);
+  if(pid===SWAP_ID){ // 🔁 Takas Kartı: CARD_OPEN TL'den açılan, herkesin katıldığı açık artırma; en yüksek teklif alır, teklif gelmezse kart yanar
+    A.lastMyst=false;A.lot={pid,bid:CARD_OPEN-1,leader:-1,active:[],turn:-1,mystery:false,offer:false,card:true};   // bid=CARD_OPEN-1: ilk geçerli teklif CARD_OPEN
+    A.lot.active=A.managers.map((m,i)=>i).filter(i=>maxBid(A,i)>=CARD_OPEN);
     settle(A,(((A.lotNo-2)%n)+n)%n);return;
   }
   A.lastMyst=myst;
@@ -1498,7 +1498,7 @@ function botUseSwap(A){
 }
 function swapFinish(A){if(A.swap&&!A.swap.used)botUseSwap(A);}
 function botWantsCard(A,i){return maxBid(A,i)>=CARD_PRICE+4&&A.rng()<0.55*A.managers[i].aggr;}
-function botValueCard(A,i){const mb=maxBid(A,i);return mb<=CARD_PRICE+1?0:Math.min(mb,Math.round(CARD_PRICE+1+A.rng()*5*A.managers[i].aggr));}
+function botValueCard(A,i){const mb=maxBid(A,i),ag=A.managers[i].aggr;if(mb<CARD_OPEN||A.rng()>0.45+0.3*ag)return 0;return Math.min(mb,Math.round(CARD_OPEN+1+A.rng()*7*ag));}   // kart açık artırması: bazı botlar ilgilenmez, ilgilenenler ~6-13 TL'ye kadar çıkar
 function botDecide(A,i){
   const lot=A.lot;if(!lot.vals)lot.vals={};
   if(lot.vals[i]===undefined)lot.vals[i]=lot.card?botValueCard(A,i):lot.mystery?botValueMystery(A,i):botValue(A,i,PLAYERS[lot.pid]);
@@ -1926,7 +1926,7 @@ function render(){
   if(screen!=='setup'){const om=$('omodal');if(om&&!om.hidden){om.hidden=true;om.innerHTML='';}} // oyun/lobi açılınca online penceresi kapanır
   const app=$('app'),cb=$('cb');
   const prevY=window.scrollY||window.pageYOffset||0,pp=$('mysq'),prevH=(pp&&pp.offsetHeight)||0;
-  const keep=cb&&cb.value!==undefined&&A?{v:cb.value,f:typeof document!=='undefined'&&document.activeElement===cb,lot:A.lotNo}:null;
+  const keep=cb&&cb.value!==undefined&&A?{v:cb.value,f:typeof document!=='undefined'&&document.activeElement===cb,lot:cb.getAttribute('data-lot')}:null;   // lot numarası eski ekrandan okunur
   let h;
   if(screen==='setup')h=setupHTML();
   else if(screen==='olobby')h=lobbyHTML();
@@ -1934,7 +1934,7 @@ function render(){
   else if(screen==='squads')h=squadsHTML();
   else h=leagueHTML();
   app.innerHTML=(ONL.on&&screen!=='setup'?onlineBarHTML():'')+h+(!ONL.on&&(screen==='auction'||screen==='squads')?'<div style="text-align:center;margin:22px 0 6px"><button onclick="newGame()">🏠 Ana menü / Yeni oyun</button></div>':'');
-  if(keep&&A&&keep.lot===A.lotNo){const c2=$('cb');if(c2&&c2.value!==undefined){c2.value=keep.v;if(keep.f&&c2.focus)c2.focus();}}
+  if(keep&&A&&String(keep.lot)===String(A.lotNo)){const c2=$('cb');if(c2&&c2.value!==undefined){c2.value=keep.v;if(!(parseInt(c2.value,10)>=parseInt(c2.min,10)))c2.value=c2.min;if(keep.f&&c2.focus)c2.focus();}}   // yalnızca aynı lotta; en düşük geçerli tekliften küçükse en düşüğe
   // Sayfa konumu: yalnızca ekran değişince en üste git; bot teklifi, pas, ayar değişikliği gibi olaylarda yerinde kal
   if(lastScr!==screen)window.scrollTo(0,0);
   else if(prevY>0){
@@ -1990,7 +1990,7 @@ function setupHTMLBase(){
     <p class="note">Her kadro yeri için en az 1 TL gerekir; bu yüzden bütçe kadro sayısından az olamaz.</p>`:''}
     <label><input type="checkbox" ${cfg.double?'checked':''} onchange="cfg.double=this.checked"> Çift devreli lig (iç saha / deplasman)</label>
     ${cfg.mode==='auction'?`<label><input type="checkbox" ${cfg.mystery?'checked':''} onchange="cfg.mystery=this.checked"> 🎁 Sürpriz yıldız kartları (arada bir, 85+ puanlı)</label>
-    <label><input type="checkbox" ${cfg.swap?'checked':''} onchange="cfg.swap=this.checked"> 🔁 Takas kartı <span class="muted">(oyun başına bir tane; sırası gelen 10 TL'ye alabilir, almazsa açık artırılır. Kart sahibi, açık artırma bitince aynı mevkideki oyuncusunu bir rakiple takas eder. Yalnızca insanlı oyunlarda)</span></label>`:''}
+    <label><input type="checkbox" ${cfg.swap?'checked':''} onchange="cfg.swap=this.checked"> 🔁 Takas kartı <span class="muted">(oyun başına bir tane; 5 TL'den açılır, herkes teklif verir, en yüksek teklif alır. Kart sahibi, açık artırma bitince aynı mevkideki oyuncusunu bir rakiple takas eder. Yalnızca insanlı oyunlarda)</span></label>`:''}
   </div>
   <button class="primary" style="width:100%;font-size:1.1rem" onclick="startFlow()">${cfg.mode==='auction'?'Açık artırmayı başlat':'Hızlı seçimi başlat'}</button>
   <button style="width:100%;margin-top:8px;font-size:1.05rem" onclick="openOnline()">🌐 Online oyna (arkadaşlarla)${((ONL.hosted&&ONL.hosted.length)||p2pHostedList().length)?' · devam eden oyun var':''}</button>
@@ -2120,7 +2120,7 @@ function auctionHTML(){
       <div class="chips">${mm.squad.map(id=>chip(P(id))).join('')}</div></div>`;}).join('');
   const lead=lot.leader>=0?'Önde: <b>'+esc(A.managers[lot.leader].name)+'</b>':'Henüz teklif yok';
   const lotC=lot.card?`<div class="card lotc" style="border-color:#7c3aed"><span class="pill" style="background:#7c3aed;color:#fff;align-self:flex-start">🔁 TAKAS KARTI</span><div class="nm">Takas Kartı</div>
-      <div class="r1"><span class="ovr" style="background:#7c3aed">🔁</span><div><div class="mu">${lot.offer?'Kart fiyatı':'Güncel teklif'}</div><div class="bid">${lot.offer?CARD_PRICE:lot.bid} TL</div></div></div><div class="mu">Açık artırma bitince aynı mevkideki bir oyuncuyu rakiple takas edersin.</div><div class="mu">${lead}</div></div>`:
+      <div class="r1"><span class="ovr" style="background:#7c3aed">🔁</span><div><div class="mu">${lot.offer?'Kart fiyatı':(lot.leader<0?'Açılış fiyatı':'Güncel teklif')}</div><div class="bid">${lot.offer?CARD_PRICE:(lot.leader<0?CARD_OPEN:lot.bid)} TL</div></div></div><div class="mu">Açık artırma bitince aynı mevkideki bir oyuncuyu rakiple takas edersin.</div><div class="mu">${lead}</div></div>`:
     lot.mystery?`<div class="card lotc" style="border-color:var(--gold)"><span class="pill" style="background:var(--gold);color:#422006;align-self:flex-start">🎁 SÜRPRİZ KART</span><div class="nm">❓ Gizli yıldız</div>
       <div class="r1"><span class="ovr" style="background:var(--muted)">85+</span><div><div class="mu">${lot.offer?'Kart fiyatı':'Güncel teklif'}</div><div class="bid">${lot.offer?1:lot.bid} TL</div></div></div><div class="mu">${lead}</div></div>`:
     `<div class="card lotc"><div class="mu">${posPill(p)} ${esc(p.ctry)}</div><div class="nm">${esc(p.name)}</div>
@@ -2134,7 +2134,7 @@ function auctionHTML(){
       <div class="row" style="flex-wrap:nowrap"><button class="primary" style="flex:1" onclick="doMystery(true)">🎁 1 TL'ye al</button><button style="flex:1" onclick="doMystery(false)">Açık artırmaya çıkar</button></div></div>`:
     `<div class="card cmp" style="border-color:${COL[t]}"><div class="h"><b>Sıra: ${esc(m.name)} <span class="muted" style="font-weight:400">· ${ONL.on?'sende':'cihazı ver'}</span></b><span class="note" style="margin:0">En fazla <b>${mx} TL</b></span></div>
       <div class="quick">${quick}</div>
-      <div class="bidrow"><input type="number" id="cb" min="${min}" max="${mx}" value="${min}"><button class="primary" onclick="bidCustom()">Teklif ver</button><button class="danger" onclick="doPass()">Pas</button></div></div>`;
+      <div class="bidrow"><input type="number" id="cb" data-lot="${A.lotNo}" min="${min}" max="${mx}" value="${min}"><button class="primary" onclick="bidCustom()">Teklif ver</button><button class="danger" onclick="doPass()">Pas</button></div></div>`;
   return `<div class="mh"><span>🔨 Açık artırma</span><span>Futbolcu ${A.lotNo}/${A.total}</span></div>${last}${mine?`<div class="topgrid">${miniPitchHTML(t)}${lotC}</div>`:lotC}${ctl}
   <div class="grid">${mgrs}</div>`;
 }
@@ -2783,7 +2783,7 @@ function newGame(){if(confirm('Yeni oyun başlasın mı?')){clearTimeout(botTime
 // ================= 🌐 ONLINE (çok oyunculu) =================
 // Mimari: sayfanın SAHİBİ (host) oyunun tek doğru kaynağıdır. Durumu `db`'ye yazar; misafirler onu canlı okur.
 // Misafirler hamlelerini `room` presence kanalıyla host'a iletir (yazma yetkisi gerekmez).
-const BUILD='2026-11-04 · v30';
+const BUILD='2026-11-17 · v31';
 const IN_CLAUDE=()=>typeof window!=='undefined'&&!!(window.claude&&window.claude.use);
 const KIND=['normal','long','pen','corner','freekick'],OUTC=['goal','saved','wide'];   // yeni türler sona eklendi (eski kayıtlar bozulmaz)
 const ONL={on:false,role:null,code:null,name:'',phase:null,seats:[],mySeat:-1,myKey:null,nick:'',
